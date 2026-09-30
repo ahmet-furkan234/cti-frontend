@@ -1,0 +1,20 @@
+/** Audit action names emitted by the backend (cti-backend/src/shared/strings.ts → AuditAction). */
+export const AUDIT_ACTIONS = [
+  'auth.login',
+  'auth.login_failed',
+  'auth.login_blocked',
+  'auth.registered',
+  'auth.password_changed',
+  'auth.password_reset',
+  'auth.refresh_reuse_detected',
+  'user.invited',
+  'user.updated',
+  'user.deleted',
+  'user.permissions_changed',
+  'user.password_reset_issued',
+  'user.sessions_revoked',
+  'role.created',
+  'role.updated',
+  'role.deleted',
+  'sync.requested',
+] as const;

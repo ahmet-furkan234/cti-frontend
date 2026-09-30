@@ -1,0 +1,41 @@
+import { defineMessages } from '../define';
+
+export const auth = defineMessages({
+  'auth.login.title': { tr: 'Giriş yap', en: 'Sign in' },
+  'auth.login.subtitle': { tr: 'Kurumsal hesabınızla devam edin', en: 'Continue with your work account' },
+  'auth.email': { tr: 'E-posta', en: 'Email' },
+  'auth.password': { tr: 'Parola', en: 'Password' },
+  'auth.localSkip': { tr: 'Girişi atla (yerel)', en: 'Skip login (local)' },
+  'auth.continue': { tr: 'Devam et', en: 'Continue' },
+  'auth.signingIn': { tr: 'Giriş yapılıyor', en: 'Signing in' },
+  'auth.noAccount': { tr: 'Hesabınız yok mu? Yöneticinizden davet isteyin.', en: 'No account? Ask your administrator for an invite.' },
+  'auth.forgot': { tr: 'Parolanızı mı unuttunuz? Yöneticinizden sıfırlama bağlantısı isteyin.', en: 'Forgot your password? Ask your administrator for a reset link.' },
+  'auth.badCredentials': { tr: 'E-posta veya parola hatalı', en: 'Incorrect email or password' },
+  'auth.inactive': { tr: 'Hesabınız devre dışı bırakılmış. Yöneticinize başvurun.', en: 'Your account is disabled. Contact your administrator.' },
+  'auth.locked.title': { tr: 'Hesap geçici olarak kilitlendi', en: 'Account temporarily locked' },
+  'auth.locked.text': {
+    tr: 'Çok sayıda başarısız denemeden sonra giriş {time}’ye kadar kapalı. Acil erişim için yöneticinize başvurun.',
+    en: 'Too many failed attempts — sign-in is disabled until {time}. Contact your administrator for urgent access.',
+  },
+  'auth.tooMany': { tr: 'Çok fazla deneme yapıldı. Biraz sonra tekrar deneyin.', en: 'Too many attempts. Please try again shortly.' },
+  'auth.networkError': { tr: 'Sunucuya ulaşılamadı. Bağlantınızı kontrol edin.', en: 'Could not reach the server. Check your connection.' },
+  'auth.resetDone': { tr: 'Parolanız güncellendi. Yeni parolanızla giriş yapabilirsiniz.', en: 'Your password was updated. You can now sign in.' },
+
+  'auth.register.title': { tr: 'Hesabınızı oluşturun', en: 'Create your account' },
+  'auth.register.subtitle': { tr: '{email} adresi için davet aldınız', en: 'You were invited as {email}' },
+  'auth.name': { tr: 'Ad soyad', en: 'Full name' },
+  'auth.newPassword': { tr: 'Yeni parola', en: 'New password' },
+  'auth.confirmPassword': { tr: 'Parolayı doğrula', en: 'Confirm password' },
+  'auth.passwordHint': { tr: 'En az 12 karakter', en: 'At least 12 characters' },
+  'auth.passwordTooShort': { tr: 'Parola en az 12 karakter olmalı', en: 'Password must be at least 12 characters' },
+  'auth.passwordMismatch': { tr: 'Parolalar eşleşmiyor', en: 'Passwords do not match' },
+  'auth.register.submit': { tr: 'Hesabı oluştur', en: 'Create account' },
+  'auth.register.exists': { tr: 'Bu e-posta için hesap zaten var. Giriş yapmayı deneyin.', en: 'An account already exists for this email. Try signing in.' },
+  'auth.linkInvalid.title': { tr: 'Bağlantı geçersiz veya süresi dolmuş', en: 'This link is invalid or has expired' },
+  'auth.linkInvalid.text': { tr: 'Yöneticinizden yeni bir bağlantı isteyin.', en: 'Ask your administrator for a new link.' },
+  'auth.toLogin': { tr: 'Girişe dön', en: 'Back to sign in' },
+
+  'auth.reset.title': { tr: 'Parolayı sıfırla', en: 'Reset password' },
+  'auth.reset.subtitle': { tr: '{email} hesabı için yeni parola belirleyin', en: 'Choose a new password for {email}' },
+  'auth.reset.submit': { tr: 'Parolayı güncelle', en: 'Update password' },
+});

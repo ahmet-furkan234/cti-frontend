@@ -1,0 +1,34 @@
+# Dependencies
+node_modules/
+
+# Build output and caches
+.next/
+out/
+dist/
+.cache/
+*.tsbuildinfo
+next-env.d.ts
+
+# Test coverage
+coverage/
+
+# Local environment settings
+.env
+.env.*
+!.env.example
+!.env.*.example
+
+# Logs and local deployment settings
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.vercel/
+
+# OS and editor temporary files
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
