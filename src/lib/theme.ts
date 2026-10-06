@@ -1,6 +1,6 @@
 export type Theme = 'dark' | 'light';
 export const THEME_COOKIE = 'cti_theme';
-export const DEFAULT_THEME: Theme = 'dark';
+export const DEFAULT_THEME: Theme = 'light';
 
 export function applyTheme(theme: Theme) {
   document.documentElement.dataset.theme = theme;

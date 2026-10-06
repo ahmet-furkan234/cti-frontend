@@ -9,7 +9,7 @@ export const shell = defineMessages({
   'nav.assets': { tr: 'Varlıklar', en: 'Assets' },
   'nav.vulns': { tr: 'Zafiyetler', en: 'Vulnerabilities' },
   'nav.intel': { tr: 'Tehdit istihbaratı', en: 'Threat intelligence' },
-  'nav.alerts': { tr: 'Alarmlar & Entegrasyonlar', en: 'Alerts & Integrations' },
+  'nav.alerts': { tr: 'Alarmlar', en: 'Alerts' },
   'nav.reports': { tr: 'Raporlar', en: 'Reports' },
   'nav.admin': { tr: 'Yönetim', en: 'Administration' },
   'nav.users': { tr: 'Kullanıcılar & roller', en: 'Users & roles' },

@@ -2,12 +2,16 @@
 
 import { useMemo, useState } from 'react';
 import { Button, MonoText, RiskRing, SearchInput, SlaChip, StatusPill, Tag, Icon } from '@/components/ui';
-import { DemoNotice } from '@/components/shell/demo-notice';
+import { LoadError, LoadingRows } from '@/components/shell/query-state';
+import { StateBlock } from '@/components/ui';
+import { useCveAssets } from '@/features/vulns/hooks';
+import { toCveAssetRow } from '@/features/vulns/map';
+import { useAuth } from '@/components/auth-provider';
+import { PERMISSIONS as P } from '@/lib/permissions';
 import { useI18n, type MessageKey } from '@/i18n';
 import { formatDate } from '@/lib/format';
 import { useAgeMinutes } from '@/lib/use-age';
 import type { CveDetail } from '@/lib/types';
-import { CVE_ASSET_ROWS, CVE_ASSET_STATS } from '@/mocks/cve-assets';
 import { buildTimeline, displayUrl, groupOfRef, TimelineList, type RefGroup } from './detail-parts';
 
 /* ---------- References ---------- */
@@ -28,13 +32,13 @@ export function ReferencesTab({ cve }: { cve: CveDetail }) {
   ];
 
   return (
-    <div className="split">
-      <section className="card card--clip main col">
-        <div className="card-toolbar">
+    <div className="flex flex-col items-stretch gap-4 xl:flex-row xl:items-start">
+      <section className="min-w-0 rounded-xl border border-line bg-surface shadow-card overflow-hidden main flex flex-col">
+        <div className="flex flex-wrap items-center gap-2 border-b border-line px-5 py-3">
           {(['all', ...groups] as const).map((g) => (
-            <button key={g} type="button" className={`filter-chip${filter === g ? ' is-on' : ''}`} onClick={() => setFilter(g)}>
+            <button key={g} type="button" className={`inline-flex h-9 items-center gap-1.5 rounded-full border border-line-strong bg-surface px-3.5 text-sm font-medium text-ink-muted hover:text-ink${filter === g ? ' is-on' : ''}`} onClick={() => setFilter(g)}>
               {t(g === 'all' ? 'cve.refs.all' : (`cve.refs.${g}` as MessageKey))}
-              <span className="mono-11" style={{ opacity: 0.8 }}>{g === 'all' ? cve.references.length : byGroup[g].length}</span>
+              <span className="tabular-nums text-xs opacity-80">{g === 'all' ? cve.references.length : byGroup[g].length}</span>
             </button>
           ))}
           <span className="grow" />
@@ -42,26 +46,26 @@ export function ReferencesTab({ cve }: { cve: CveDetail }) {
             {t('cve.refs.copyAll')}
           </Button>
         </div>
-        {cve.references.length === 0 ? <div className="muted" style={{ padding: 16 }}>{t('cve.refs.empty')}</div> : null}
+        {cve.references.length === 0 ? <div className="text-ink-muted p-4">{t('cve.refs.empty')}</div> : null}
         {groups
           .filter((g) => (filter === 'all' || filter === g) && byGroup[g].length > 0)
           .map((g) => (
             <div key={g}>
-              <div className="trow trow--group">
-                <span style={{ width: 8, height: 8, borderRadius: 2, background: GROUP_COLOR[g] }} />
+              <div className="flex h-9 items-center gap-2 border-b border-line bg-canvas px-5 text-sm font-semibold text-ink-muted">
+                <span className="w-2 h-2 rounded-xs" style={{ background: GROUP_COLOR[g] }} />
                 {t(`cve.refs.${g}` as MessageKey)}
-                <span className="subtle" style={{ fontWeight: 400 }}>{byGroup[g].length}</span>
+                <span className="text-ink-subtle font-normal">{byGroup[g].length}</span>
               </div>
               {byGroup[g].map((r) => (
-                <div key={r.url} className="trow" style={{ ...cols, minHeight: 52, padding: '6px 16px' }}>
-                  <span className="col min0">
-                    <a href={r.url} target="_blank" rel="noopener noreferrer nofollow" className="ellipsis" style={{ fontSize: 13, lineHeight: '18px', fontWeight: 500 }}>
+                <div key={r.url} className="grid min-h-12 items-center gap-3 border-b border-line last:border-b-0 [grid-template-columns:var(--cols)] min-h-[52px] py-1.5 px-4" style={{ ...cols }}>
+                  <span className="flex flex-col min-w-0">
+                    <a href={r.url} target="_blank" rel="noopener noreferrer nofollow" className="truncate text-sm font-medium">
                       {displayUrl(r.url)}
                     </a>
-                    {r.source ? <span className="mono-11 muted ellipsis" style={{ lineHeight: '16px' }}>{r.source}</span> : null}
+                    {r.source ? <span className="tabular-nums text-xs text-ink-muted truncate">{r.source}</span> : null}
                   </span>
-                  <span className="row gap-4 wrap">{(r.tags ?? []).map((tag) => <Tag key={tag}>{tag}</Tag>)}</span>
-                  <button type="button" className="icon-btn" aria-label={t('common.copy')} onClick={() => void navigator.clipboard?.writeText(r.url)}>
+                  <span className="flex items-center gap-1 flex-wrap">{(r.tags ?? []).map((tag) => <Tag key={tag}>{tag}</Tag>)}</span>
+                  <button type="button" className="inline-flex size-9 items-center justify-center rounded-lg text-ink-subtle hover:bg-surface-2 hover:text-ink" aria-label={t('common.copy')} onClick={() => void navigator.clipboard?.writeText(r.url)}>
                     <Icon name="copy" size={13} />
                   </button>
                 </div>
@@ -69,22 +73,16 @@ export function ReferencesTab({ cve }: { cve: CveDetail }) {
             </div>
           ))}
       </section>
-      <div className="col gap-16 aside-360">
-        <section className="card card--pad col" style={{ gap: 10 }}>
-          <h2 className="h3">{t('cve.maturity')}</h2>
+      <div className="flex flex-col gap-4 w-full xl:w-[360px] xl:shrink-0">
+        <section className="min-w-0 rounded-xl border border-line bg-surface shadow-card p-5 flex flex-col gap-2.5">
+          <h2 className="text-base font-semibold">{t('cve.maturity')}</h2>
           {maturity.map((m) => (
-            <div key={m.key} className="row" style={{ gap: 10 }}>
+            <div key={m.key} className="flex items-center gap-2.5">
               <span
-                style={{
-                  width: 10,
-                  height: 10,
-                  borderRadius: 9999,
-                  background: m.tone === 'critical' ? 'var(--critical)' : 'transparent',
-                  boxShadow: m.tone === 'critical' ? 'none' : 'inset 0 0 0 1.5px var(--ink-subtle)',
-                }}
+                className="w-2.5 h-2.5 rounded-full" style={{ background: m.tone === 'critical' ? 'var(--critical)' : 'transparent', boxShadow: m.tone === 'critical' ? 'none' : 'inset 0 0 0 1.5px var(--ink-subtle)' }}
               />
               <span className="grow" style={{ color: m.tone === 'critical' ? 'var(--ink)' : 'var(--ink-muted)' }}>{t(m.key)}</span>
-              <span style={{ fontSize: 12, fontWeight: 500, color: m.tone === 'critical' ? 'var(--critical-ink)' : 'var(--ink-muted)' }}>{t(m.value)}</span>
+              <span className="text-[13px] font-medium" style={{ color: m.tone === 'critical' ? 'var(--critical-ink)' : 'var(--ink-muted)' }}>{t(m.value)}</span>
             </div>
           ))}
         </section>
@@ -98,20 +96,24 @@ export function TimelineTab({ cve }: { cve: CveDetail }) {
   const { t } = useI18n();
   const events = buildTimeline(cve, t);
   return (
-    <section className="card card--pad col" style={{ gap: 4, maxWidth: 720 }}>
-      <h2 className="h2" style={{ paddingBottom: 8 }}>{t('cve.stream')}</h2>
+    <section className="min-w-0 rounded-xl border border-line bg-surface shadow-card p-5 flex flex-col gap-1 max-w-[720px]">
+      <h2 className="text-lg font-semibold pb-2">{t('cve.stream')}</h2>
       <TimelineList events={events} />
     </section>
   );
 }
 
-/* ---------- Affected assets (demo data until the inventory module exists) ---------- */
-export function AssetsTab() {
+/* ---------- Affected assets: inventory matched against this CVE ---------- */
+export function AssetsTab({ cveId }: { cveId: string }) {
   const { t } = useI18n();
+  const { can } = useAuth();
+  const query = useCveAssets(cveId, can(P.VULN_READ));
   const age = useAgeMinutes();
   const [q, setQ] = useState('');
   const cols = { '--cols': '44px 190px 150px 140px 120px 80px 150px 120px 100px minmax(0, 1fr)' } as React.CSSProperties;
-  const rows = CVE_ASSET_ROWS.filter((r) => `${r.host} ${r.ip} ${r.owner ?? ''}`.toLowerCase().includes(q.toLowerCase()));
+  const all = useMemo(() => (query.data?.items ?? []).map(toCveAssetRow), [query.data]);
+  const rows = all.filter((r) => `${r.host} ${r.ip} ${r.owner ?? ''}`.toLowerCase().includes(q.toLowerCase()));
+  const CVE_ASSET_STATS = query.data?.stats ?? { affected: 0, exposed: 0, open: 0, inProgress: 0, mitigated: 0 };
   const stats: { key: MessageKey; value: number; cls: string }[] = [
     { key: 'cve.assets.stat.affected', value: CVE_ASSET_STATS.affected, cls: 'ink' },
     { key: 'cve.assets.stat.exposed', value: CVE_ASSET_STATS.exposed, cls: 't-high' },
@@ -119,49 +121,52 @@ export function AssetsTab() {
     { key: 'cve.assets.stat.inProgress', value: CVE_ASSET_STATS.inProgress, cls: 't-accent' },
     { key: 'cve.assets.stat.mitigated', value: CVE_ASSET_STATS.mitigated, cls: 't-low' },
   ];
+  if (!can(P.VULN_READ)) return <StateBlock kind="forbidden" title={t('common.noPermission')} description={t('common.noPermissionDesc')} />;
+  if (query.isError) return <LoadError onRetry={() => void query.refetch()} />;
+  if (query.isPending) return <LoadingRows />;
+  if (all.length === 0) return <section className="rounded-xl border border-line bg-surface shadow-card"><StateBlock kind="empty" title={t('cve.assets.none.title')} description={t('cve.assets.none.desc')} /></section>;
   return (
-    <div className="col gap-16">
-      <DemoNotice />
-      <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 12 }}>
+    <div className="flex flex-col gap-4">
+      <div className="grid [grid-template-columns:repeat(auto-fit,_minmax(150px,_1fr))] gap-3">
         {stats.map((s) => (
-          <div key={s.key} className="stat-box">
-            <span className="caps">{t(s.key)}</span>
+          <div key={s.key} className="flex flex-col gap-0.5 rounded-xl border border-line bg-surface px-4 py-3">
+            <span className="text-sm font-medium">{t(s.key)}</span>
             <span className={`v ${s.cls}`}>{s.value}</span>
           </div>
         ))}
       </div>
-      <section className="card card--clip col">
-        <div className="card-toolbar">
-          <SearchInput shortcut={null} value={q} onChange={(e) => setQ(e.target.value)} placeholder={t('cve.assets.searchPlaceholder')} style={{ width: 260 }} />
+      <section className="min-w-0 rounded-xl border border-line bg-surface shadow-card overflow-hidden flex flex-col">
+        <div className="flex flex-wrap items-center gap-2 border-b border-line px-5 py-3">
+          <SearchInput shortcut={null} value={q} onChange={(e) => setQ(e.target.value)} placeholder={t('cve.assets.searchPlaceholder')} className="w-[260px]" />
           <span className="grow" />
         </div>
-        <div className="scroll-x">
-          <div className="trow trow--head" style={cols}>
+        <div className="overflow-x-auto">
+          <div className="grid min-h-12 items-center gap-3 border-b border-line px-5 last:border-b-0 [grid-template-columns:var(--cols)] sticky top-0 z-1 h-10! min-h-0! bg-surface-2 text-sm font-medium text-ink-muted" style={cols}>
             <span>{t('vulns.col.risk')}</span><span>{t('assets.col.asset')}</span><span>OS</span><span>{t('cve.assets.col.installed')}</span><span>{t('cve.assets.col.target')}</span>
             <span>{t('assets.col.env')}</span><span>{t('vulns.col.status')}</span><span>{t('vulns.col.assignee')}</span><span>SLA</span><span>{t('cve.assets.col.source')}</span>
           </div>
           {rows.map((r) => (
-            <div key={r.host} className="trow" style={{ ...cols, height: 46 }}>
+            <div key={r.host} className="grid min-h-12 items-center gap-3 border-b border-line px-5 last:border-b-0 [grid-template-columns:var(--cols)] h-[46px]" style={{ ...cols }}>
               <RiskRing score={r.risk} />
-              <span className="col min0">
-                <span className="row gap-6">
-                  <span className="mono-12" style={{ fontWeight: 500 }}>{r.host}</span>
-                  {r.exposed ? <Icon name="globe" size={12} style={{ color: 'var(--high-ink)' }} aria-label={t('assets.exposed')} /> : null}
+              <span className="flex flex-col min-w-0">
+                <span className="flex items-center gap-1.5">
+                  <span className="text-[13px] font-medium">{r.host}</span>
+                  {r.exposed ? <Icon name="globe" size={12} className="text-high-ink" aria-label={t('assets.exposed')} /> : null}
                 </span>
-                <span className="mono-11 muted" style={{ lineHeight: '14px' }}>{r.ip}</span>
+                <span className="font-mono text-xs text-ink-muted">{r.ip}</span>
               </span>
-              <span className="ellipsis" style={{ fontSize: 12 }}>{r.os}</span>
-              <span className="mono-12 t-high">{r.installed}</span>
-              <span className="mono-12 t-low">{r.fixed}</span>
+              <span className="truncate text-[13px]">{r.os}</span>
+              <span className="font-mono text-[13px] text-high-ink">{r.installed}</span>
+              <span className="font-mono text-[13px] text-low-ink">{r.fixed}</span>
               <span><Tag>{r.env}</Tag></span>
               <StatusPill status={r.status} />
-              <span style={{ fontSize: 12, color: r.owner ? 'var(--ink)' : 'var(--ink-subtle)' }}>{r.owner ?? t('vulns.unassigned')}</span>
+              <span className="text-[13px]" style={{ color: r.owner ? 'var(--ink)' : 'var(--ink-subtle)' }}>{r.owner ?? t('vulns.unassigned')}</span>
               <span>{r.slaHours != null ? <SlaChip hoursLeft={r.slaHours} /> : null}</span>
-              <span className="ellipsis muted" style={{ fontSize: 12 }}>{r.source} · {age(r.seenMin)}</span>
+              <span className="truncate text-ink-muted text-[13px]">{r.source} · {age(r.seenMin)}</span>
             </div>
           ))}
         </div>
-        <div className="row gap-12 muted" style={{ padding: '10px 16px', fontSize: 12 }}>
+        <div className="flex items-center gap-3 text-ink-muted py-2.5 px-4 text-[13px]">
           <span className="grow">{t('cve.assets.range', { from: 1, to: rows.length, total: CVE_ASSET_STATS.affected })}</span>
           <MonoText>{formatDate(new Date())}</MonoText>
         </div>

@@ -56,10 +56,10 @@ interface IconProps extends Omit<SVGProps<SVGSVGElement>, 'name'> {
   spin?: boolean;
 }
 
-export function Icon({ name, size = 14, spin, className, ...rest }: IconProps) {
+export function Icon({ name, size = 16, spin, className, ...rest }: IconProps) {
   return (
     <svg
-      className={['cti-icon', spin ? 'cti-spin' : '', className ?? ''].filter(Boolean).join(' ')}
+      className={['inline-block shrink-0 align-middle', spin ? 'animate-spin' : '', className ?? ''].filter(Boolean).join(' ')}
       width={size}
       height={size}
       viewBox="0 0 24 24"

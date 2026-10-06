@@ -21,12 +21,6 @@ export const common = defineMessages({
   'epss.percentile': { tr: 'yüzdelik', en: 'percentile' },
   'risk.score': { tr: 'Risk skoru', en: 'Risk score' },
   // tri-state permission toggle
-  'tri.inherit': { tr: 'Devral', en: 'Inherit' },
-  'tri.grant': { tr: 'İzin ver', en: 'Grant' },
-  'tri.deny': { tr: 'Reddet', en: 'Deny' },
-  'tri.allowed': { tr: 'İzinli', en: 'Allowed' },
-  'tri.denied': { tr: 'Reddedildi', en: 'Denied' },
-  'tri.via': { tr: 'rol:', en: 'via' },
   // password strength
   'pw.0': { tr: 'Çok kısa', en: 'Too short' },
   'pw.1': { tr: 'Zayıf', en: 'Weak' },

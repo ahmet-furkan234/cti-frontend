@@ -126,6 +126,9 @@ export async function api<T = unknown>(path: string, opts: RequestOptions = {}):
       const { mockRead } = await import('../mocks/cves');
       const data = mockRead(path, opts.query);
       if (data !== undefined) return data as T;
+      const { mockDemoRead } = await import('../mocks/demo-api');
+      const demoData = mockDemoRead(path, opts.query);
+      if (demoData !== undefined) return demoData as T;
       const { mockAdminRead } = await import('../mocks/admin');
       const adminData = mockAdminRead(path, opts.query);
       if (adminData !== undefined) return adminData as T;

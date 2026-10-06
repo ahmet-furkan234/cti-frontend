@@ -2,121 +2,194 @@
 
 import Link from 'next/link';
 import { useMemo, useState } from 'react';
-import { PageHeader } from '@/components/shell/page-guard';
-import { Button, Icon, RiskRing, SearchInput, StatusPill, Tabs, Tag, buttonClass } from '@/components/ui';
+import { PageHeader, RequirePermission } from '@/components/shell/page-guard';
+import { LoadError, LoadingRows } from '@/components/shell/query-state';
+import { Banner, Button, Icon, RiskRing, SearchInput, Select, StateBlock, StatusPill, Tag, buttonClass, cx } from '@/components/ui';
 import { useI18n, type MessageKey } from '@/i18n';
+import { useAssets } from '@/features/assets/hooks';
+import { toAssetItem, type AssetItem } from '@/features/assets/map';
+import { isFiltered, noFilters, vulnBreakdown, type SortKey } from '@/lib/assets';
 import { formatNumber } from '@/lib/format';
 import { useAgeMinutes } from '@/lib/use-age';
-import { ASSET_ICON, ASSET_ROWS, ASSET_TYPE_TABS, EXPOSURE, OPENSSH_VERSIONS, TAB_TYPES } from '@/mocks/assets';
+import { useDemo } from '@/lib/demo';
+import { useAuth } from '@/components/auth-provider';
+import { PERMISSIONS as P } from '@/lib/permissions';
+import { ASSET_ICON } from '@/mocks/assets';
+import type { AssetTab } from '@/lib/types';
 
-const COLS = { '--cols': '28px 170px 130px 76px 70px 96px 44px 124px 84px 84px minmax(0, 1fr)' } as React.CSSProperties;
-const CRIT_COLOR = { critical: 'var(--critical-ink)', high: 'var(--high-ink)', medium: 'var(--ink)', low: 'var(--ink-muted)' } as const;
+const SORTS: SortKey[] = ['risk', 'seen', 'name'];
+const ENVS = ['prod', 'staging', 'dev', 'corp'] as const;
+const CRITS = ['critical', 'high', 'medium', 'low'] as const;
+const VULN_TEXT = { critical: 'text-critical-ink', high: 'text-high-ink', medium: 'text-medium-ink', low: 'text-ink-muted' } as const;
+const CRIT_DOT = { critical: 'bg-critical', high: 'bg-high', medium: 'bg-medium', low: 'bg-low' } as const;
+const ROW_GRID = 'md:grid-cols-[minmax(0,1.7fr)_minmax(0,1.1fr)_minmax(0,1.2fr)_130px_20px]';
 
-export default function AssetsPage() {
+function Tile({ label, sub, value, on, onClick, tone }: { label: string; sub: string; value: string; on?: boolean; onClick?: () => void; tone?: string }) {
+  const body = (
+    <>
+      <span className="text-sm text-ink-muted">{label}</span>
+      <span className={cx('text-3xl leading-9 font-semibold tabular-nums', tone)}>{value}</span>
+      <span className="text-sm text-ink-subtle">{sub}</span>
+    </>
+  );
+  const cls = 'flex min-w-0 flex-col gap-0.5 rounded-xl border bg-surface px-5 py-4 text-left shadow-card transition-colors';
+  return onClick ? (
+    <button type="button" aria-pressed={on} onClick={onClick} className={cx(cls, on ? 'border-accent bg-accent-soft' : 'border-line hover:border-line-strong')}>{body}</button>
+  ) : (
+    <div className={cx(cls, 'border-line')}>{body}</div>
+  );
+}
+
+function Chip({ on, onClick, children }: { on: boolean; onClick: () => void; children: React.ReactNode }) {
+  return (
+    <button type="button" aria-pressed={on} onClick={onClick} className={cx('inline-flex h-10 shrink-0 items-center gap-2 rounded-full border px-4 text-[15px] font-medium transition-colors', on ? 'border-transparent bg-accent text-on-accent' : 'border-line-strong bg-surface text-ink-muted hover:text-ink')}>
+      {children}
+    </button>
+  );
+}
+
+function AssetRowCard({ r, open, onToggle, canEdit }: { r: AssetItem; open: boolean; onToggle: () => void; canEdit: boolean }) {
+  const { t } = useI18n();
+  const ageMin = useAgeMinutes();
+  const vulns = vulnBreakdown(r.counts);
+  return (
+    <li className={cx('border-b border-line last:border-b-0', open && 'bg-surface-2/60')}>
+      <button type="button" aria-expanded={open} onClick={onToggle} className={cx('grid w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-3 px-4 py-4 text-left hover:bg-surface-2 md:px-5', ROW_GRID)}>
+        <span className="flex min-w-0 items-center gap-3">
+          <span title={t(`assets.type.${r.type}` as MessageKey)} className="inline-flex size-11 shrink-0 items-center justify-center rounded-xl bg-surface-2 text-ink-muted"><Icon name={ASSET_ICON[r.type]} size={20} /></span>
+          <span className="flex min-w-0 flex-col">
+            <span className="truncate text-[15px] font-semibold">{r.host}</span>
+            <span className="truncate text-sm text-ink-muted"><span className="font-mono">{r.ip}</span> · {r.os}</span>
+          </span>
+        </span>
+        <span className="order-3 col-span-2 flex flex-wrap items-center gap-1.5 md:order-none md:col-span-1">
+          <Tag>{t(`env.${r.env}` as MessageKey)}</Tag>
+          {r.exposed ? <Tag tone="exposed" icon="globe">{t('assets.internet')}</Tag> : null}
+          {r.status !== 'active' ? <StatusPill status={r.status} /> : null}
+        </span>
+        <span className="order-4 col-span-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm md:order-none md:col-span-1">
+          {vulns.length === 0 ? <span className="text-ink-subtle">{t('assets.row.noVulns')}</span> : vulns.map((v) => <span key={v.level} className={cx('font-medium', VULN_TEXT[v.level])}>{t(`assets.vuln.${v.level}` as MessageKey, { n: v.n })}</span>)}
+        </span>
+        <span className="order-2 flex items-center gap-3 md:order-none">
+          <RiskRing score={r.risk} size={40} />
+          <span className="hidden text-sm text-ink-muted md:block">{ageMin(r.seenMin)}</span>
+        </span>
+        <Icon name="down" size={16} className={cx('hidden text-ink-subtle transition-transform md:block', open && 'rotate-180')} />
+      </button>
+      {open ? (
+        <dl className="m-0 grid grid-cols-1 gap-x-8 gap-y-3 px-5 pb-5 text-[15px] sm:grid-cols-2 md:pl-[76px]">
+          <div><dt className="text-sm text-ink-muted">{t('assets.d.os')}</dt><dd className="m-0">{r.os}</dd></div>
+          <div><dt className="text-sm text-ink-muted">{t('assets.d.ip')}</dt><dd className="m-0 font-mono">{r.ip}</dd></div>
+          <div><dt className="text-sm text-ink-muted">{t('assets.d.crit')}</dt><dd className="m-0 flex items-center gap-2"><span className={cx('size-2.5 rounded-full', CRIT_DOT[r.crit])} />{t(`sev.${r.crit}` as MessageKey)}</dd></div>
+          <div><dt className="text-sm text-ink-muted">{t('assets.d.seen')}</dt><dd className="m-0">{ageMin(r.seenMin)}</dd></div>
+          <div><dt className="text-sm text-ink-muted">{t('assets.d.source')}</dt><dd className="m-0">{r.source === 'manual' ? t('assets.src.manual') : r.source}</dd></div>
+          <div><dt className="text-sm text-ink-muted">{t('assets.d.status')}</dt><dd className="m-0"><StatusPill status={r.status} /></dd></div>
+          <div className="flex flex-wrap gap-2 sm:col-span-2">
+            <Link href="/vulns" className={buttonClass('secondary', 'sm')}>{t('assets.d.viewVulns')}</Link>
+            {canEdit ? <Link href={`/assets/${r.id}`} className={buttonClass('secondary', 'sm')}>{t('assets.d.edit')}</Link> : null}
+          </div>
+        </dl>
+      ) : null}
+    </li>
+  );
+}
+
+const TABS: AssetTab[] = ['all', 'srv', 'ep', 'net', 'ctr', 'cld'];
+
+function Assets() {
   const { t, locale } = useI18n();
-  const age = useAgeMinutes();
-  const [q, setQ] = useState('');
-  const [tab, setTab] = useState('all');
+  const demo = useDemo();
+  const { can } = useAuth();
+  const [filters, setFilters] = useState(noFilters);
+  const [tab, setTab] = useState<AssetTab>('all');
+  const [sort, setSort] = useState<SortKey>('risk');
+  const [open, setOpen] = useState<string | null>(null);
+  const set = (patch: Partial<typeof filters>) => setFilters((f) => ({ ...f, ...patch }));
 
-  const rows = useMemo(() => {
-    const types = TAB_TYPES[tab];
-    const term = q.trim().toLowerCase();
-    return ASSET_ROWS.filter((r) => (!types || types.includes(r.type)) && (!term || `${r.host} ${r.ip} ${r.os}`.toLowerCase().includes(term)));
-  }, [tab, q]);
-  const maxCount = Math.max(...OPENSSH_VERSIONS.map((v) => v.count));
+  const query = useAssets({
+    q: filters.q, tab, exposed: filters.exposedOnly, criticalVulns: filters.criticalVulns, stale: filters.staleOnly, env: filters.env, criticality: filters.crit, sort,
+  });
+  const pages = query.data?.pages ?? [];
+  const rows = useMemo(() => pages.flatMap((p) => p.items).map(toAssetItem), [query.data]); // eslint-disable-line react-hooks/exhaustive-deps
+  const stats = pages[0]?.stats;
+  const matches = pages[0]?.total ?? 0;
+  const filtered = isFiltered({ ...filters, types: tab === 'all' ? null : [] });
+  const reset = () => { setFilters(noFilters()); setTab('all'); };
+  const total = stats?.total ?? 0;
+  const tabCount = (id: AssetTab) => stats?.tabs[id] ?? 0;
 
   return (
-    <div className="page">
+    <div className="mx-auto flex w-full max-w-[1100px] min-w-0 grow flex-col gap-5 p-4 md:p-8">
       <PageHeader
         title={t('assets.title')}
-        subtitle={t('assets.subtitle', { total: formatNumber(2418, locale), active: formatNumber(2201, locale), stale: 164, archived: 53 })}
+        subtitle={stats ? t('assets.subtitle', { total: formatNumber(total, locale), active: formatNumber(stats.active, locale), stale: formatNumber(stats.stale, locale), archived: formatNumber(stats.archived, locale) }) : undefined}
         actions={
           <>
-            <Tag tone="accent">{t('common.demoData')}</Tag>
-            <SearchInput shortcut={null} style={{ width: 320 }} placeholder={t('assets.searchPlaceholder')} value={q} onChange={(e) => setQ(e.target.value)} />
-            <Button icon="copy">{t('common.export')}</Button>
-            <Link href="/assets/import" className={buttonClass('primary')}>{t('assets.import')}</Link>
+            {demo ? <Tag tone="accent">{t('common.demoData')}</Tag> : null}
+            {can(P.ASSET_WRITE) ? <Link href="/assets/import" className={buttonClass()}>{t('assets.import')}</Link> : null}
+            {can(P.ASSET_WRITE) ? <Link href="/assets/new" className={buttonClass('primary')}>{t('assets.add')}</Link> : null}
           </>
         }
       />
 
-      <div className="grid grid-3">
-        <section className="card card--pad col span-2" style={{ gap: 10 }}>
-          <div className="row" style={{ gap: 10 }}>
-            <h2 className="h3">{t('assets.dist.title')}</h2>
-            <Tag tone="accent">{t('assets.dist.tag')}</Tag>
-            <span className="grow" />
-            <span className="sub">{t('assets.dist.meta', { assets: 312, versions: 9 })}</span>
-          </div>
-          {OPENSSH_VERSIONS.map((v) => (
-            <div key={v.version} className="grid" style={{ gridTemplateColumns: '110px minmax(0, 1fr) 56px 150px', gap: 12, alignItems: 'center' }}>
-              <span className="mono-12">{v.version === '__other__' ? t('assets.dist.other', { n: 4 }) : v.version}</span>
-              <span style={{ height: 10, background: 'var(--surface-2)', borderRadius: 2 }}>
-                <span style={{ display: 'block', height: 10, borderRadius: 2, width: `${Math.round((v.count / maxCount) * 100)}%`, background: v.vulnerable ? 'var(--high)' : 'var(--chart-2)' }} />
-              </span>
-              <span className="mono-12 right">{v.count}</span>
-              <span style={{ fontSize: 11, color: v.vulnerable ? 'var(--high-ink)' : 'var(--ink-muted)' }}>{v.note}</span>
-            </div>
-          ))}
-        </section>
-        <section className="card card--pad col gap-12">
-          <h2 className="h3">{t('assets.exposure.title')}</h2>
-          {(
-            [
-              ['assets.exposure.internet', EXPOSURE.internet],
-              ['assets.exposure.kev', EXPOSURE.kev],
-              ['assets.exposure.stale', EXPOSURE.stale],
-              ['assets.exposure.unowned', EXPOSURE.unowned],
-            ] as [MessageKey, number][]
-          ).map(([k, v]) => (
-            <div key={k} className="row" style={{ gap: 10 }}>
-              <span className="grow muted">{t(k)}</span>
-              <span className="tnum" style={{ fontSize: 18, lineHeight: '24px', fontWeight: 600 }}>{v}</span>
-            </div>
-          ))}
-        </section>
+      <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
+        <Tile label={t('assets.tile.all')} sub={t('assets.tile.all.sub')} value={formatNumber(total, locale)} on={!filtered} onClick={reset} />
+        <Tile label={t('assets.tile.internet')} sub={t('assets.tile.internet.sub')} value={formatNumber(stats?.exposed ?? 0, locale)} on={filters.exposedOnly} onClick={() => set({ exposedOnly: !filters.exposedOnly })} tone="text-high-ink" />
+        <Tile label={t('assets.tile.vuln')} sub={t('assets.tile.vuln.sub')} value={formatNumber(stats?.withCritical ?? 0, locale)} on={filters.criticalVulns} onClick={() => set({ criticalVulns: !filters.criticalVulns })} tone="text-critical-ink" />
+        <Tile label={t('assets.tile.stale')} sub={t('assets.tile.stale.sub')} value={formatNumber(stats?.stale ?? 0, locale)} on={filters.staleOnly} onClick={() => set({ staleOnly: !filters.staleOnly })} />
       </div>
 
-      <section className="card card--clip col">
-        <div className="card-toolbar">
-          <Tabs label={t('assets.tabs.label')} value={tab} onChange={setTab} items={ASSET_TYPE_TABS.map((x) => ({ id: x.id, label: t(`assets.tab.${x.id}` as MessageKey), count: formatNumber(x.count, locale) }))} />
-          <span className="grow" />
-          <Button size="sm" variant="ghost">{t('assets.filter.env')}</Button>
-          <Button size="sm" variant="ghost">{t('assets.filter.criticality')}</Button>
-          <Button size="sm" variant="ghost">{t('assets.filter.status')}</Button>
-        </div>
-        <div className="scroll-x">
-          <div className="trow trow--head" style={COLS}>
-            <span /><span>{t('assets.col.hostIp')}</span><span>OS</span><span>{t('assets.col.criticality')}</span><span>{t('assets.col.env')}</span>
-            <span>{t('assets.col.exposure')}</span><span>{t('assets.col.risk')}</span><span>{t('assets.col.vulns')}</span><span>{t('assets.col.status')}</span><span>{t('assets.col.seen')}</span><span>{t('assets.col.source')}</span>
-          </div>
-          {rows.map((r) => (
-            <div key={r.host} className="trow" style={{ ...COLS, height: 44 }}>
-              <span title={t(`assets.type.${r.type}` as MessageKey)} className="avatar" style={{ width: 28, height: 28, borderRadius: 6, background: 'var(--surface-2)', color: 'var(--ink-muted)' }}>
-                <Icon name={ASSET_ICON[r.type]} size={15} />
-              </span>
-              <span className="col min0">
-                <span className="mono-12" style={{ lineHeight: '16px', fontWeight: 500, color: 'var(--accent)' }}>{r.host}</span>
-                <span className="mono-11 muted" style={{ lineHeight: '14px' }}>{r.ip}</span>
-              </span>
-              <span className="ellipsis" style={{ fontSize: 12 }}>{r.os}</span>
-              <span style={{ fontSize: 12, color: CRIT_COLOR[r.crit] }}>{t(`sev.${r.crit}` as MessageKey)}</span>
-              <span><Tag>{r.env}</Tag></span>
-              <span>{r.exposed ? <Tag tone="exposed" icon="globe">{t('assets.internet')}</Tag> : null}</span>
-              <RiskRing score={r.risk} />
-              <span className="row mono-12" style={{ gap: 6 }}>
-                <span className="t-critical" style={{ width: 22 }}>{r.counts[0]}</span>
-                <span className="t-high" style={{ width: 22 }}>{r.counts[1]}</span>
-                <span className="t-medium" style={{ width: 22 }}>{r.counts[2]}</span>
-                <span className="muted" style={{ width: 22 }}>{r.counts[3]}</span>
-              </span>
-              <StatusPill status={r.status} />
-              <span className="muted" style={{ fontSize: 12 }}>{age(r.seenMin)}</span>
-              <span className="muted" style={{ fontSize: 12 }}>{r.source === 'manual' ? t('assets.src.manual') : r.source}</span>
-            </div>
+      <div className="flex flex-col gap-3">
+        <SearchInput shortcut={null} className="w-full md:max-w-lg" placeholder={t('assets.searchPlaceholder')} value={filters.q} onChange={(e) => set({ q: e.target.value })} />
+        <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 md:mx-0 md:flex-wrap md:px-0" role="group" aria-label={t('assets.tabs.label')}>
+          {TABS.map((id) => (
+            <Chip key={id} on={tab === id} onClick={() => setTab(id)}>
+              {t(`assets.tab.${id}` as MessageKey)}
+              <span className="text-sm tabular-nums opacity-70">{formatNumber(tabCount(id), locale)}</span>
+            </Chip>
           ))}
         </div>
+      </div>
+
+      <section className="min-w-0 overflow-hidden rounded-xl border border-line bg-surface shadow-card">
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-2 border-b border-line px-4 py-3 md:px-5">
+          <div className="grow">
+            <span className="text-[15px] font-semibold">{t('assets.results', { n: formatNumber(matches, locale) })}</span>
+          </div>
+          <Select size="sm" className="w-44" aria-label={t('assets.f.env')} value={filters.env} onChange={(v) => set({ env: v })} options={[{ value: '', label: t('assets.f.envAll') }, ...ENVS.map((e) => ({ value: e, label: t(`env.${e}` as MessageKey) }))]} />
+          <Select size="sm" className="w-52" aria-label={t('assets.f.crit')} value={filters.crit} onChange={(v) => set({ crit: v as typeof filters.crit })} options={[{ value: '', label: t('assets.f.critAll') }, ...CRITS.map((c) => ({ value: c, label: t(`sev.${c}` as MessageKey) }))]} />
+          <Select size="sm" className="w-48" aria-label={t('assets.sort.label')} value={sort} onChange={(v) => setSort(v as SortKey)} options={SORTS.map((s) => ({ value: s, label: t(`assets.sort.${s}` as MessageKey) }))} />
+        </div>
+        {query.isError ? (
+          <LoadError onRetry={() => void query.refetch()} />
+        ) : query.isPending ? (
+          <LoadingRows />
+        ) : rows.length === 0 ? (
+          filtered ? (
+            <StateBlock kind="no-results" title={t('assets.empty.title')} description={t('assets.empty.desc')} action={<Button onClick={reset}>{t('assets.clear')}</Button>} />
+          ) : (
+            <StateBlock kind="empty" title={t('assets.none.title')} description={t('assets.none.desc')} action={can(P.ASSET_WRITE) ? <Link href="/assets/new" className={buttonClass('primary')}>{t('assets.add')}</Link> : undefined} />
+          )
+        ) : (
+          <>
+            <ul className="m-0 list-none p-0">{rows.map((r) => <AssetRowCard key={r.id} canEdit={can(P.ASSET_WRITE)} r={r} open={open === r.id} onToggle={() => setOpen((o) => (o === r.id ? null : r.id))} />)}</ul>
+            {query.hasNextPage ? (
+              <div className="flex justify-center border-t border-line p-4">
+                <Button loading={query.isFetchingNextPage} onClick={() => void query.fetchNextPage()}>{t('assets.more')}</Button>
+              </div>
+            ) : null}
+          </>
+        )}
       </section>
+      {demo ? <Banner tone="info">{t('shell.demoBanner.text')}</Banner> : null}
     </div>
+  );
+}
+
+export default function AssetsPage() {
+  return (
+    <RequirePermission any={[P.ASSET_READ]}>
+      <Assets />
+    </RequirePermission>
   );
 }

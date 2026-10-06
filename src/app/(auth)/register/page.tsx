@@ -38,10 +38,10 @@ function RegisterForm({ email, token }: { email: string; token: string }) {
   };
 
   return (
-    <form className="auth-card" onSubmit={submit} noValidate>
+    <form className="flex w-full max-w-[420px] flex-col gap-5 rounded-2xl border border-line bg-surface p-8 shadow-card" onSubmit={submit} noValidate>
       <div>
-        <h1 className="h1">{t('auth.register.title')}</h1>
-        <div className="sub">{t('auth.register.subtitle', { email })}</div>
+        <h1 className="text-2xl leading-8 font-semibold tracking-tight">{t('auth.register.title')}</h1>
+        <div className="text-sm text-ink-muted">{t('auth.register.subtitle', { email })}</div>
       </div>
       {error ? <Banner tone="error">{error}</Banner> : null}
       <TextField label={t('auth.email')} type="email" value={email} readOnly disabled />

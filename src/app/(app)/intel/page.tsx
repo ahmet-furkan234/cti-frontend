@@ -1,126 +1,142 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { PageHeader } from '@/components/shell/page-guard';
-import { Button, MonoText, SearchInput, Tag } from '@/components/ui';
+import { useAuth } from '@/components/auth-provider';
+import { AddIndicatorsDrawer, IndicatorList } from '@/components/intel/indicators';
+import { Overview } from '@/components/intel/overview';
+import { WatchlistDrawer, WatchlistGrid, newWatchlist, type WatchlistDraft } from '@/components/intel/watchlists';
+import { PageHeader, RequirePermission } from '@/components/shell/page-guard';
+import { LoadError, LoadingRows } from '@/components/shell/query-state';
+import { Banner, Button, Tabs, Tag, cx } from '@/components/ui';
+import { useIntelMutations, useIocs, useWatchlists } from '@/features/intel/hooks';
+import { toIoc } from '@/features/intel/map';
 import { useI18n } from '@/i18n';
-import { formatNumber } from '@/lib/format';
-import { ATTACK_PATTERN, ATTACK_TACTICS, ATTACK_TOP, IOCS, WATCHLISTS } from '@/mocks/intel';
+import { ApiError } from '@/lib/api';
+import { useDemo } from '@/lib/demo';
+import { PERMISSIONS as P } from '@/lib/permissions';
+import type { Ioc } from '@/mocks/intel';
 
-const COLS = { '--cols': '80px minmax(0, 1fr) 150px 130px 110px 100px' } as React.CSSProperties;
-const LEVELS = ['var(--surface-2)', 'var(--accent-soft)', 'color-mix(in srgb, var(--chart-1) 55%, var(--surface))', 'var(--chart-1)'];
+type TabId = 'overview' | 'watchlists' | 'indicators';
 
-function confidenceColor(c: number) {
-  return c >= 80 ? 'var(--critical)' : c >= 50 ? 'var(--high)' : 'var(--medium)';
+function Tile({ label, value, sub, tone }: { label: string; value: string; sub: string; tone?: string }) {
+  return (
+    <div className="flex flex-col gap-0.5 rounded-xl border border-line bg-surface px-5 py-4 shadow-card">
+      <span className="text-sm text-ink-muted">{label}</span>
+      <span className={cx('text-3xl leading-9 font-semibold tabular-nums', tone)}>{value}</span>
+      <span className="text-sm text-ink-muted">{sub}</span>
+    </div>
+  );
 }
 
-export default function IntelPage() {
+function Intel() {
   const { t, locale } = useI18n();
-  const [q, setQ] = useState('');
-  const iocs = useMemo(() => {
-    const term = q.trim().toLowerCase();
-    return IOCS.filter((i) => !term || `${i.type} ${i.value} ${i.source}`.toLowerCase().includes(term));
-  }, [q]);
+  const demo = useDemo();
+  const { can } = useAuth();
+  const canManage = can(P.INTEL_MANAGE);
+  const listsQ = useWatchlists();
+  const iocsQ = useIocs();
+  const m = useIntelMutations();
+  const lists = listsQ.data?.items ?? [];
+  const iocs = useMemo(() => (iocsQ.data?.items ?? []).map(toIoc), [iocsQ.data]);
+  const [tab, setTab] = useState<TabId>('overview');
+  const [editing, setEditing] = useState<WatchlistDraft | null>(null);
+  const [adding, setAdding] = useState(false);
+  const [focusId, setFocusId] = useState<string | null>(null);
+  const [notice, setNotice] = useState<{ tone: 'success' | 'error'; text: string } | null>(null);
+  const failed = (e: unknown) => setNotice({ tone: 'error', text: e instanceof ApiError && e.code === 'LOCAL_PREVIEW' ? t('asset.err.demo') : t('common.tryAgainLater') });
+
+  const attention = iocs.filter((i) => i.matches > 0).length + lists.filter((w) => w.enabled && w.hits > 0).length;
+
+  const saveList = (d: WatchlistDraft) => {
+    const { id, ...body } = d;
+    const done = { onSuccess: () => { setEditing(null); setNotice({ tone: 'success', text: t('intel.wl.saved') }); }, onError: failed };
+    if (id) m.updateWatchlist.mutate({ id, ...body }, done);
+    else m.createWatchlist.mutate(body, done);
+  };
+  const deleteList = (d: WatchlistDraft) => {
+    if (!d.id || !window.confirm(t('intel.wl.deleteConfirm', { name: d.name }))) return;
+    m.deleteWatchlist.mutate(d.id, { onSuccess: () => setEditing(null), onError: failed });
+  };
+  const addIocs = (items: { value: string; type: Ioc['type'] }[]) =>
+    m.addIocs.mutate(items, {
+      onSuccess: (res) => { setAdding(false); setTab('indicators'); setNotice({ tone: 'success', text: t('intel.imp.added', { n: res.added }) }); },
+      onError: failed,
+    });
+  const deleteIoc = (ioc: Ioc) => {
+    if (!window.confirm(t('intel.ioc.deleteConfirm', { value: ioc.value }))) return;
+    m.deleteIoc.mutate(ioc.id, { onError: failed });
+  };
+
+  const loading = listsQ.isPending || iocsQ.isPending;
+  const errored = listsQ.isError || iocsQ.isError;
 
   return (
-    <div className="page">
+    <div className="mx-auto flex w-full max-w-[1100px] min-w-0 grow flex-col gap-5 p-4 md:p-8">
       <PageHeader
         title={t('intel.title')}
+        subtitle={t('intel.subtitle')}
         actions={
           <>
-            <Tag tone="accent">{t('common.demoData')}</Tag>
-            <Button>{t('intel.importIoc')}</Button>
-            <Button variant="primary">{t('intel.newWatchlist')}</Button>
+            {demo ? <Tag tone="accent">{t('common.demoData')}</Tag> : null}
+            {canManage ? <Button onClick={() => setAdding(true)}>{t('intel.ioc.add')}</Button> : null}
+            {canManage ? <Button variant="primary" icon="plus" onClick={() => setEditing(newWatchlist())}>{t('intel.wl.new')}</Button> : null}
           </>
         }
       />
 
-      <div className="grid grid-4">
-        {WATCHLISTS.map((w) => (
-          <section key={w.name} className="card col" style={{ gap: 8, padding: '14px 16px' }}>
-            <div className="row">
-              <span className="grow" style={{ fontWeight: 600 }}>{w.name}</span>
-              {w.hits > 0 ? (
-                <span className="mono" style={{ padding: '0 6px', borderRadius: 9999, background: 'var(--critical-soft)', color: 'var(--critical-ink)', fontSize: 11, fontWeight: 600 }}>
-                  {t('intel.newHits', { n: w.hits })}
-                </span>
-              ) : null}
-            </div>
-            <span className="sub">{w.rule}</span>
-            <div className="row subtle" style={{ gap: 12, fontSize: 11 }}>
-              <span>{t('intel.assets', { n: formatNumber(w.count, locale) })}</span>
-              <span>·</span>
-              <span>{w.channel}</span>
-            </div>
-          </section>
-        ))}
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+        <Tile label={t('intel.sum.attention')} value={String(attention)} sub={t('intel.sum.attention.sub')} tone={attention > 0 ? 'text-critical-ink' : undefined} />
+        <Tile label={t('intel.sum.indicators')} value={(iocsQ.data?.active ?? 0).toLocaleString(locale)} sub={t('intel.sum.indicators.sub')} />
+        <Tile label={t('intel.sum.expiring')} value={String(iocsQ.data?.expiring ?? 0)} sub={t('intel.sum.expiring.sub')} />
       </div>
 
-      <div className="split">
-        <section className="card card--clip main col">
-          <div className="card-toolbar">
-            <h2 className="h3">{t('intel.iocs')}</h2>
-            <span className="sub">{t('intel.iocsActive', { n: formatNumber(18442, locale) })}</span>
-            <span className="grow" />
-            <SearchInput shortcut={null} style={{ width: 260 }} placeholder={t('intel.iocSearch')} value={q} onChange={(e) => setQ(e.target.value)} />
-          </div>
-          <div className="scroll-x">
-            <div className="trow trow--head" style={COLS}>
-              <span>{t('intel.col.type')}</span><span>{t('intel.col.value')}</span><span>{t('intel.col.source')}</span>
-              <span>{t('intel.col.confidence')}</span><span>{t('intel.col.expires')}</span><span className="right">{t('intel.col.matches')}</span>
-            </div>
-            {iocs.map((i) => (
-              <div key={`${i.type}-${i.value}`} className="trow" style={{ ...COLS, height: 40 }}>
-                <span><Tag>{i.type}</Tag></span>
-                <MonoText copy truncate>{i.value}</MonoText>
-                <span className="muted" style={{ fontSize: 12 }}>{i.source}</span>
-                <span className="row" style={{ gap: 8 }}>
-                  <span style={{ width: 56, height: 4, borderRadius: 9999, background: 'var(--surface-3)', overflow: 'hidden' }}>
-                    <span style={{ display: 'block', height: 4, width: `${i.confidence}%`, background: confidenceColor(i.confidence) }} />
-                  </span>
-                  <span className="mono-12">{i.confidence}</span>
-                </span>
-                <span className="mono-12" style={{ color: i.expired ? 'var(--ink-subtle)' : 'var(--ink-muted)' }}>{i.expires}</span>
-                <span className="mono-12 right" style={{ color: i.matches ? 'var(--critical-ink)' : 'var(--ink-subtle)' }}>
-                  {i.matches ? t('intel.matchAssets', { n: i.matches }) : '—'}
-                </span>
-              </div>
-            ))}
-          </div>
-        </section>
+      {notice ? <Banner tone={notice.tone} onDismiss={() => setNotice(null)}>{notice.text}</Banner> : null}
 
-        <section className="card card--pad col aside-380" style={{ gap: 10 }}>
-          <div className="row">
-            <h2 className="h3 grow">{t('intel.attack.title')}</h2>
-            <Tag tone="accent">{t('intel.attack.phase')}</Tag>
-          </div>
-          <span className="sub">{t('intel.attack.desc')}</span>
-          <div className="grid" style={{ gridTemplateColumns: 'repeat(6, minmax(0, 1fr))', gap: 3 }}>
-            {ATTACK_TACTICS.map((x) => (
-              <span key={x} className="subtle" style={{ fontSize: 9, lineHeight: '12px', height: 24, overflow: 'hidden' }}>{x}</span>
-            ))}
-            {ATTACK_PATTERN.map((p, i) => (
-              <span key={i} title={`T${i + 1}`} style={{ height: 28, borderRadius: 3, background: LEVELS[p] }} />
-            ))}
-          </div>
-          <div className="row muted" style={{ gap: 6, fontSize: 11 }}>
-            <span>{t('intel.attack.less')}</span>
-            {LEVELS.map((c, i) => (
-              <span key={i} style={{ width: 16, height: 10, borderRadius: 2, background: c }} />
-            ))}
-            <span>{t('intel.attack.more')}</span>
-          </div>
-          <div className="col gap-6" style={{ paddingTop: 8, borderTop: '1px solid var(--border)' }}>
-            <span className="caps">{t('intel.attack.top')}</span>
-            {ATTACK_TOP.map((x) => (
-              <div key={x.id} className="row" style={{ justifyContent: 'space-between', fontSize: 12 }}>
-                <span><span className="mono">{x.id}</span> {x.name}</span>
-                <span className="mono">{x.count}</span>
-              </div>
-            ))}
-          </div>
-        </section>
-      </div>
+      <Tabs
+        label={t('intel.tabs.label')}
+        value={tab}
+        onChange={(v) => setTab(v as TabId)}
+        items={[
+          { id: 'overview', label: t('intel.tab.overview') },
+          { id: 'watchlists', label: t('intel.tab.watchlists'), count: lists.length },
+          { id: 'indicators', label: t('intel.tab.indicators') },
+        ]}
+      />
+
+      {errored ? (
+        <div className="rounded-xl border border-line bg-surface shadow-card"><LoadError onRetry={() => { void listsQ.refetch(); void iocsQ.refetch(); }} /></div>
+      ) : loading ? (
+        <div className="rounded-xl border border-line bg-surface shadow-card"><LoadingRows /></div>
+      ) : null}
+
+      {tab === 'overview' && !loading && !errored ? (
+        <Overview
+          iocs={iocs}
+          watchlists={lists}
+          onOpenIoc={(id) => { setFocusId(id); setTab('indicators'); }}
+          onOpenWatchlists={() => setTab('watchlists')}
+        />
+      ) : null}
+      {tab === 'watchlists' && !loading && !errored ? (
+        <WatchlistGrid
+          lists={lists}
+          onToggle={(id, on) => m.updateWatchlist.mutate({ id, enabled: on }, { onError: failed })}
+          onEdit={(w) => canManage && setEditing({ ...w })}
+          onNew={() => setEditing(newWatchlist())}
+        />
+      ) : null}
+      {tab === 'indicators' && !loading && !errored ? <IndicatorList key={focusId ?? 'all'} iocs={iocs} total={iocsQ.data?.total ?? 0} focusId={focusId} onAdd={() => canManage && setAdding(true)} onDelete={canManage ? deleteIoc : undefined} /> : null}
+
+      {editing ? <WatchlistDrawer key={editing.id ?? 'new'} initial={editing} saving={m.createWatchlist.isPending || m.updateWatchlist.isPending} onSave={saveList} onDelete={editing.id ? () => deleteList(editing) : undefined} onClose={() => setEditing(null)} /> : null}
+      {adding ? <AddIndicatorsDrawer saving={m.addIocs.isPending} onAdd={addIocs} onClose={() => setAdding(false)} /> : null}
     </div>
+  );
+}
+
+export default function IntelPage() {
+  return (
+    <RequirePermission any={[P.INTEL_READ]}>
+      <Intel />
+    </RequirePermission>
   );
 }

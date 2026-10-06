@@ -3,9 +3,10 @@
 import { usePathname, useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { useState, type FormEvent } from 'react';
-import { Button, Icon, SearchInput, StatusPill } from '@/components/ui';
+import { Button, Icon, IconButton, SearchInput, StatusPill } from '@/components/ui';
+import { LangSwitch } from './lang-switch';
 import { useAuth } from '@/components/auth-provider';
-import { LANGS, useI18n } from '@/i18n';
+import { useI18n } from '@/i18n';
 import { api } from '@/lib/api';
 import { applyTheme, type Theme } from '@/lib/theme';
 import { PERMISSIONS as P } from '@/lib/permissions';
@@ -21,7 +22,7 @@ function HealthPill() {
 }
 
 export function Topbar({ onToggleNav, theme, onThemeChange }: { onToggleNav: () => void; theme: Theme; onThemeChange: (t: Theme) => void }) {
-  const { t, lang, setLang } = useI18n();
+  const { t } = useI18n();
   const { can } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
@@ -33,12 +34,13 @@ export function Topbar({ onToggleNav, theme, onThemeChange }: { onToggleNav: () 
     if (term) router.push(`/cves?q=${encodeURIComponent(term)}`);
   };
   const nextTheme: Theme = theme === 'dark' ? 'light' : 'dark';
+  const themeLabel = t(theme === 'dark' ? 'shell.theme.toLight' : 'shell.theme.toDark');
 
   return (
-    <header className="topbar">
-      <Button variant="ghost" size="sm" className="nav-toggle" onClick={onToggleNav} aria-label={t('shell.menu')} icon="menu" />
+    <header className="sticky top-0 z-10 flex h-16 shrink-0 items-center gap-3 border-b border-line bg-canvas/90 px-4 backdrop-blur md:px-8">
+      <Button variant="ghost" className="lg:hidden" onClick={onToggleNav} aria-label={t('shell.menu')} icon="menu" />
       {can(P.CVE_READ) ? (
-        <form onSubmit={submit} style={{ width: 420, maxWidth: '100%' }}>
+        <form onSubmit={submit} className="min-w-0 flex-1 md:max-w-md md:flex-none md:basis-md">
           <SearchInput
             value={q}
             onChange={(e) => setQ(e.target.value)}
@@ -48,27 +50,21 @@ export function Topbar({ onToggleNav, theme, onThemeChange }: { onToggleNav: () 
           />
         </form>
       ) : null}
-      <div className="grow" />
-      {can(P.SYNC_VIEW) ? <HealthPill /> : null}
-      <div role="group" aria-label={t('shell.lang')} className="seg">
-        {LANGS.map((l) => (
-          <button key={l} type="button" className={l === lang ? 'is-on' : ''} onClick={() => setLang(l)}>
-            {l.toUpperCase()}
-          </button>
-        ))}
+      <div className="hidden grow md:block" />
+      {can(P.SYNC_VIEW) ? <div className="hidden lg:block"><HealthPill /></div> : null}
+      <div className="hidden sm:block">
+        <LangSwitch />
       </div>
-      <button
-        type="button"
-        className="icon-btn"
+      <IconButton
         onClick={() => {
           applyTheme(nextTheme);
           onThemeChange(nextTheme);
         }}
-        title={t(theme === 'dark' ? 'shell.theme.toLight' : 'shell.theme.toDark')}
-        aria-label={t(theme === 'dark' ? 'shell.theme.toLight' : 'shell.theme.toDark')}
+        title={themeLabel}
+        aria-label={themeLabel}
       >
-        <Icon name={theme === 'dark' ? 'sun' : 'moon'} size={16} />
-      </button>
+        <Icon name={theme === 'dark' ? 'sun' : 'moon'} size={18} />
+      </IconButton>
     </header>
   );
 }

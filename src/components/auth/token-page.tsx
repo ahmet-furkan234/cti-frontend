@@ -27,7 +27,7 @@ export function TokenGate({
 
   if (token.length < 20 || isError) {
     return (
-      <div className="auth-card">
+      <div className="flex w-full max-w-[420px] flex-col gap-5 rounded-2xl border border-line bg-surface p-8 shadow-card">
         <StateBlock
           kind="error"
           title={t('auth.linkInvalid.title')}
@@ -39,7 +39,7 @@ export function TokenGate({
   }
   if (isPending || !data) {
     return (
-      <div className="auth-card">
+      <div className="flex w-full max-w-[420px] flex-col gap-5 rounded-2xl border border-line bg-surface p-8 shadow-card">
         <Skeleton lines={3} height={12} />
       </div>
     );

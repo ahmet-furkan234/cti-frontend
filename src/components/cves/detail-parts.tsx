@@ -65,8 +65,8 @@ const TONE_VAR: Record<TimelineEvent['tone'], string> = {
 
 export function Section({ title, children, padded = true, span }: { title?: ReactNode; children: ReactNode; padded?: boolean; span?: boolean }) {
   return (
-    <section className={`card card--clip${padded ? ' card--pad' : ''}${span ? ' span-2' : ''}`} style={padded ? { display: 'flex', flexDirection: 'column', gap: 12 } : undefined}>
-      {title ? <h2 className={padded ? 'h2' : 'h2 card-head'}>{title}</h2> : null}
+    <section className={`min-w-0 rounded-xl border border-line bg-surface shadow-card overflow-hidden${padded ? ' p-5' : ''}${span ? ' md:col-span-2' : ''}`} style={padded ? { display: 'flex', flexDirection: 'column', gap: 12 } : undefined}>
+      {title ? <h2 className={padded ? 'text-lg font-semibold' : 'text-lg font-semibold flex items-center gap-2 px-5 py-4'}>{title}</h2> : null}
       {children}
     </section>
   );
@@ -75,20 +75,20 @@ export function Section({ title, children, padded = true, span }: { title?: Reac
 export function CvssBreakdown({ cve }: { cve: CveDetail }) {
   const { t } = useI18n();
   const metrics = parseCvss3(cve.cvssVector);
-  if (!cve.cvssVector) return cve.cvssScore > 0 ? null : <p className="muted">{t('cve.notScored')}</p>;
+  if (!cve.cvssVector) return cve.cvssScore > 0 ? null : <p className="text-ink-muted">{t('cve.notScored')}</p>;
   const color = { hi: 'var(--critical-ink)', mid: 'var(--high-ink)', ok: 'var(--ink)' } as const;
   return (
     <>
-      <div className="row gap-12" style={{ paddingTop: 4 }}>
-        <span className="caps">{t('cve.cvss', { v: cve.cvssVersion ?? '' }).trim()}</span>
+      <div className="flex items-center gap-3 pt-1">
+        <span className="text-sm font-medium">{t('cve.cvss', { v: cve.cvssVersion ?? '' }).trim()}</span>
         <MonoText copy>{cve.cvssVector}</MonoText>
       </div>
       {metrics.length > 0 ? (
-        <div className="grid grid-4" style={{ gap: 8 }}>
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-2">
           {metrics.map((m) => (
-            <div key={m.metric} className="kv-tile">
-              <span className="k">{t(m.labelKey)}</span>
-              <span className="v" style={{ color: color[m.tone] }}>{t(m.valueKey)}</span>
+            <div key={m.metric} className="flex flex-col gap-0.5 rounded-lg bg-surface-2 px-3 py-2.5">
+              <span className="text-xs text-ink-muted">{t(m.labelKey)}</span>
+              <span className="text-[15px] font-medium" style={{ color: color[m.tone] }}>{t(m.valueKey)}</span>
             </div>
           ))}
         </div>
@@ -100,11 +100,11 @@ export function CvssBreakdown({ cve }: { cve: CveDetail }) {
 export function EpssCard({ cve }: { cve: CveDetail }) {
   const { t } = useI18n();
   return (
-    <section className="card card--pad row" style={{ gap: 16 }}>
+    <section className="min-w-0 rounded-xl border border-line bg-surface shadow-card p-5 flex items-center gap-4">
       <EpssMeter variant="gauge" value={cve.epss} percentile={cve.epssPercentile} />
-      <div className="col" style={{ gap: 4 }}>
-        <h2 className="h3">{t('cve.epss.title')}</h2>
-        <span className="sub">{t('cve.epss.desc')}</span>
+      <div className="flex flex-col gap-1">
+        <h2 className="text-base font-semibold">{t('cve.epss.title')}</h2>
+        <span className="text-sm text-ink-muted">{t('cve.epss.desc')}</span>
       </div>
     </section>
   );
@@ -113,13 +113,13 @@ export function EpssCard({ cve }: { cve: CveDetail }) {
 export function CweCard({ cwe }: { cwe: string[] }) {
   const { t } = useI18n();
   return (
-    <section className="card card--pad col gap-8">
-      <h2 className="h3">{t('cve.cwe')}</h2>
+    <section className="min-w-0 rounded-xl border border-line bg-surface shadow-card p-5 flex flex-col gap-2">
+      <h2 className="text-base font-semibold">{t('cve.cwe')}</h2>
       {cwe.length === 0 ? (
-        <span className="muted">{t('cve.cwe.none')}</span>
+        <span className="text-ink-muted">{t('cve.cwe.none')}</span>
       ) : (
         cwe.map((c) => (
-          <div key={c} className="row">
+          <div key={c} className="flex items-center gap-2">
             <MonoText>{c}</MonoText>
           </div>
         ))
@@ -130,18 +130,18 @@ export function CweCard({ cwe }: { cwe: string[] }) {
 
 export function TimelineList({ events, compact }: { events: TimelineEvent[]; compact?: boolean }) {
   const { t } = useI18n();
-  if (events.length === 0) return <span className="muted">{t('cve.stream.empty')}</span>;
+  if (events.length === 0) return <span className="text-ink-muted">{t('cve.stream.empty')}</span>;
   return (
     <>
       {events.map((e, i) => (
-        <div key={`${e.at}-${i}`} className="tl-item">
-          <div className="tl-rail">
-            <span className="dot" style={{ background: TONE_VAR[e.tone] }} />
+        <div key={`${e.at}-${i}`} className="flex gap-3">
+          <div className="flex flex-col items-center pt-1.5">
+            <span className="inline-block size-2 shrink-0 rounded-full" style={{ background: TONE_VAR[e.tone] }} />
             {i < events.length - 1 ? <span className="line" /> : null}
           </div>
-          <div className="col" style={{ paddingBottom: compact ? 6 : 12 }}>
-            <span className="mono-11 subtle" style={{ lineHeight: '16px' }}>{formatDateTime(e.at)}</span>
-            <span style={{ fontSize: 13, lineHeight: '18px' }}>{e.label}</span>
+          <div className="flex flex-col" style={{ paddingBottom: compact ? 6 : 12 }}>
+            <span className="tabular-nums text-xs text-ink-subtle">{formatDateTime(e.at)}</span>
+            <span className="text-sm">{e.label}</span>
           </div>
         </div>
       ))}
@@ -155,28 +155,28 @@ export function ProductsTable({ cve }: { cve: CveDetail }) {
   const rows = cve.cpeMatches.slice(0, LIMIT);
   const cols = { '--cols': 'minmax(0, 1.6fr) minmax(0, 1fr) 110px' } as React.CSSProperties;
   return (
-    <section className="card card--clip">
-      <div className="card-head">
-        <h2 className="h2">{t('cve.products')}</h2>
+    <section className="min-w-0 rounded-xl border border-line bg-surface shadow-card overflow-hidden">
+      <div className="flex items-center gap-2 px-5 py-4">
+        <h2 className="text-lg font-semibold">{t('cve.products')}</h2>
       </div>
       {rows.length === 0 ? (
-        <div className="muted" style={{ padding: '0 16px 16px' }}>{t('cve.products.empty')}</div>
+        <div className="text-ink-muted p-[0px_16px_16px]">{t('cve.products.empty')}</div>
       ) : (
-        <div className="scroll-x">
-          <div className="trow trow--head" style={cols}>
+        <div className="overflow-x-auto">
+          <div className="grid min-h-12 items-center gap-3 border-b border-line px-5 last:border-b-0 [grid-template-columns:var(--cols)] sticky top-0 z-1 h-10! min-h-0! bg-surface-2 text-sm font-medium text-ink-muted" style={cols}>
             <span>{t('cve.products.cpe')}</span>
             <span>{t('cve.products.affected')}</span>
             <span>{t('cve.products.fixed')}</span>
           </div>
           {rows.map((m, i) => (
-            <div key={`${m.c}-${i}`} className="trow" style={{ ...cols, height: 36 }}>
+            <div key={`${m.c}-${i}`} className="grid min-h-12 items-center gap-3 border-b border-line px-5 last:border-b-0 [grid-template-columns:var(--cols)] h-9" style={{ ...cols }}>
               <MonoText truncate>{m.c}</MonoText>
-              <span className="mono-12">{affectedRange(m, t)}</span>
-              <span className="mono-12 t-low">{m.vee ?? '—'}</span>
+              <span className="font-mono text-[13px]">{affectedRange(m, t)}</span>
+              <span className="font-mono text-[13px] text-low-ink">{m.vee ?? '—'}</span>
             </div>
           ))}
           {cve.cpeMatches.length > LIMIT ? (
-            <div className="sub" style={{ padding: '10px 16px' }}>{t('cve.products.more', { n: cve.cpeMatches.length - LIMIT })}</div>
+            <div className="text-sm text-ink-muted py-2.5 px-4">{t('cve.products.more', { n: cve.cpeMatches.length - LIMIT })}</div>
           ) : null}
         </div>
       )}
@@ -188,14 +188,14 @@ export function ReferencesSummary({ refs }: { refs: CveReference[] }) {
   const { t } = useI18n();
   const groups: RefGroup[] = ['patch', 'advisory', 'exploit'];
   return (
-    <section className="card card--pad grid grid-3">
+    <section className="min-w-0 rounded-xl border border-line bg-surface shadow-card p-5 grid gap-4 grid-cols-1 md:grid-cols-2 xl:grid-cols-3">
       {groups.map((g) => {
         const items = refs.filter((r) => groupOfRef(r) === g);
         return (
-          <div key={g} className="col gap-6">
-            <span className="caps">{t(`cve.refs.${g}` as MessageKey)} · {items.length}</span>
+          <div key={g} className="flex flex-col gap-1.5">
+            <span className="text-sm font-medium">{t(`cve.refs.${g}` as MessageKey)} · {items.length}</span>
             {items.slice(0, 3).map((r) => (
-              <a key={r.url} href={r.url} target="_blank" rel="noopener noreferrer nofollow" className="ellipsis" style={{ fontSize: 12, lineHeight: '18px' }}>
+              <a key={r.url} href={r.url} target="_blank" rel="noopener noreferrer nofollow" className="truncate text-[13px]">
                 {displayUrl(r.url)}
               </a>
             ))}

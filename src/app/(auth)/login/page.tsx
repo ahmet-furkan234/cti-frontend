@@ -51,10 +51,10 @@ function LoginForm() {
 
   const locked = lockedUntil !== null;
   return (
-    <form className="auth-card" onSubmit={submit} noValidate>
+    <form className="flex w-full max-w-[420px] flex-col gap-5 rounded-2xl border border-line bg-surface p-8 shadow-card" onSubmit={submit} noValidate>
       <div>
-        <h1 className="h1">{t('auth.login.title')}</h1>
-        <div className="sub">{t('auth.login.subtitle')}</div>
+        <h1 className="text-2xl leading-8 font-semibold tracking-tight">{t('auth.login.title')}</h1>
+        <div className="text-sm text-ink-muted">{t('auth.login.subtitle')}</div>
       </div>
       {params.get('reset') ? <Banner tone="success">{t('auth.resetDone')}</Banner> : null}
       {locked ? (
@@ -77,7 +77,7 @@ function LoginForm() {
         {pending ? t('auth.signingIn') : t('auth.continue')}
       </Button>
       {localSkip ? <Button type="button" onClick={skipLogin} disabled={pending}>{t('auth.localSkip')}</Button> : null}
-      <div className="sub subtle" style={{ textAlign: 'center' }}>
+      <div className="text-sm text-ink-subtle text-center">
         {t('auth.forgot')}
         <br />
         {t('auth.noAccount')}

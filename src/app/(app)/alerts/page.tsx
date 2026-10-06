@@ -1,135 +1,200 @@
 'use client';
 
-import { useState } from 'react';
-import { PageHeader } from '@/components/shell/page-guard';
-import { Banner, Button, Checkbox, Icon, StatusPill, Tabs, Tag, TextField } from '@/components/ui';
-import { useI18n, type MessageKey } from '@/i18n';
-import { CHANNELS, CONDITIONS, NOTIFICATION_LOG } from '@/mocks/alerts';
+import { useMemo, useState } from 'react';
+import { ChannelDrawer, ChannelGrid } from '@/components/alerts/channels';
+import { LogFeed } from '@/components/alerts/log';
+import { RuleDrawer, RuleList, newDraft, type RuleDraft } from '@/components/alerts/rules';
+import { useAuth } from '@/components/auth-provider';
+import { PageHeader, RequirePermission } from '@/components/shell/page-guard';
+import { LoadError, LoadingRows } from '@/components/shell/query-state';
+import { Banner, Button, Tabs, Tag, cx } from '@/components/ui';
+import { useAlertLog, useAlertMutations, useChannels, useRules } from '@/features/alerts/hooks';
+import { toChannel, toLogEntry, toRule } from '@/features/alerts/map';
+import { useI18n } from '@/i18n';
+import { dayOfMinutesAgo, enabledRules, rulesAtRisk } from '@/lib/alerts';
+import { ApiError } from '@/lib/api';
+import { useDemo } from '@/lib/demo';
+import { PERMISSIONS as P } from '@/lib/permissions';
+import type { Channel, ChannelKind } from '@/mocks/alerts';
 
-const RESULT_COLOR = { sent: 'var(--low-ink)', throttled: 'var(--ink-muted)', failed: 'var(--critical-ink)' } as const;
+type TabId = 'rules' | 'channels' | 'log';
+type Notice = { tone: 'success' | 'error' | 'warning'; text: string } | null;
 
-function ChannelList() {
-  const { t } = useI18n();
+function Tile({ label, value, sub, tone }: { label: string; value: string; sub?: string; tone?: string }) {
   return (
-    <section className="card card--clip">
-      <div className="card-head"><h2 className="h3">{t('alerts.channels')}</h2></div>
-      {CHANNELS.map((c) => (
-        <div key={c.name} className="row" style={{ gap: 10, height: 52, padding: '0 16px', borderTop: '1px solid var(--border)' }}>
-          <span className="avatar mono" style={{ width: 28, height: 28, borderRadius: 6, background: 'var(--surface-2)', color: 'var(--ink-muted)', fontSize: 10 }}>{c.abbr}</span>
-          <span className="col grow min0">
-            <span style={{ fontWeight: 500 }}>{c.name}</span>
-            <span className="mono-11 muted ellipsis" style={{ lineHeight: '14px' }}>{c.target}</span>
-          </span>
-          <StatusPill status={c.status} label={t(`alerts.ch.${c.label}` as MessageKey)} />
-          <Button size="sm" variant="ghost">{t('common.test')}</Button>
-        </div>
-      ))}
-    </section>
+    <div className="flex flex-col gap-0.5 rounded-xl border border-line bg-surface px-5 py-4 shadow-card">
+      <span className="text-sm text-ink-muted">{label}</span>
+      <span className="text-3xl leading-9 font-semibold tabular-nums">{value}</span>
+      {sub ? <span className={cx('text-sm', tone ?? 'text-ink-muted')}>{sub}</span> : null}
+    </div>
   );
 }
 
-function LogList() {
+function Alerts() {
   const { t, lang } = useI18n();
-  return (
-    <section className="card card--clip">
-      <div className="card-head"><h2 className="h3">{t('alerts.log')}</h2></div>
-      {NOTIFICATION_LOG.map((l, i) => (
-        <div key={i} className="col" style={{ gap: 2, padding: '8px 16px', borderTop: '1px solid var(--border)' }}>
-          <div className="row">
-            <span className="mono-11 subtle">{l.time === 'yesterday' ? t('alerts.yesterday') : l.time}</span>
-            <span className="grow" style={{ fontSize: 12, fontWeight: 500 }}>{l.rule[lang]}</span>
-            <span style={{ fontSize: 11, fontWeight: 500, color: RESULT_COLOR[l.result] }}>{t(`alerts.res.${l.result}` as MessageKey)}</span>
-          </div>
-          <span className="sub">{l.meta[lang]}</span>
-        </div>
-      ))}
-    </section>
-  );
-}
+  const demo = useDemo();
+  const { can } = useAuth();
+  const canManage = can(P.ALERT_MANAGE);
+  const rulesQ = useRules();
+  const channelsQ = useChannels();
+  const logQ = useAlertLog();
+  const m = useAlertMutations();
+  const rules = useMemo(() => (rulesQ.data?.items ?? []).map(toRule), [rulesQ.data]);
+  const channels = useMemo(() => (channelsQ.data?.items ?? []).map(toChannel), [channelsQ.data]);
+  const log = useMemo(() => (logQ.data?.items ?? []).map(toLogEntry), [logQ.data]);
+  const [tab, setTab] = useState<TabId>('rules');
+  const [editingRule, setEditingRule] = useState<RuleDraft | null>(null);
+  const [editingChannel, setEditingChannel] = useState<Channel | 'new' | null>(null);
+  const [testing, setTesting] = useState<string | null>(null);
+  const [notice, setNotice] = useState<Notice>(null);
 
-function RuleEditor() {
-  const { t } = useI18n();
-  const [enabled, setEnabled] = useState(true);
+  const failed = (e: unknown) =>
+    setNotice({ tone: 'error', text: e instanceof ApiError && e.code === 'LOCAL_PREVIEW' ? t('asset.err.demo') : t('common.tryAgainLater') });
+
+  const atRisk = rulesAtRisk(rules, channels);
+  const badChannels = channels.filter((c) => c.status !== 'healthy');
+  const failingNames = channels.filter((c) => c.status === 'failing' && atRisk.some((r) => r.channelIds.includes(c.id))).map((c) => c.name).join(', ');
+  const today = log.filter((e) => dayOfMinutesAgo(e.min) === 'today').length;
+
+  /* rules */
+  const saveRule = (d: RuleDraft) => {
+    const body = { name: typeof d.name === 'string' ? d.name : d.name[lang], trigger: d.trigger, envs: d.envs, minRisk: d.minRisk, exposedOnly: d.exposedOnly, tag: d.tag, channelIds: d.channelIds, throttle: d.throttle, enabled: d.enabled };
+    const done = { onSuccess: () => { setEditingRule(null); setNotice({ tone: 'success', text: t('alerts.saved') }); }, onError: failed };
+    if (d.id) m.updateRule.mutate({ id: d.id, ...body }, done);
+    else m.createRule.mutate(body, done);
+  };
+  const deleteRule = (d: RuleDraft) => {
+    if (!d.id || !window.confirm(t('alerts.deleteConfirm', { name: typeof d.name === 'string' ? d.name : d.name[lang] }))) return;
+    m.deleteRule.mutate(d.id, { onSuccess: () => setEditingRule(null), onError: failed });
+  };
+  const testChannels = async (ids: string[]) => {
+    let ok = 0;
+    let bad = 0;
+    for (const id of ids) {
+      try {
+        if ((await m.testChannel.mutateAsync(id)).ok) ok++;
+        else bad++;
+      } catch {
+        bad++;
+      }
+    }
+    return { ok, bad };
+  };
+
+  /* channels */
+  const testChannel = (id: string) => {
+    const c = channels.find((x) => x.id === id);
+    if (!c) return;
+    setTesting(id);
+    m.testChannel.mutate(id, {
+      onSuccess: (res) =>
+        setNotice(res.ok ? { tone: 'success', text: t('alerts.ch.testOk', { name: c.name }) } : { tone: 'error', text: t('alerts.ch.testBad', { name: c.name, why: res.why ?? '' }) }),
+      onError: failed,
+      onSettled: () => setTesting(null),
+    });
+  };
+  const saveChannel = (kind: ChannelKind, name: string, values: Record<string, string>) => {
+    const done = { onSuccess: () => { setEditingChannel(null); setNotice({ tone: 'success', text: t('alerts.ch.saved') }); }, onError: failed };
+    if (editingChannel && editingChannel !== 'new') m.updateChannel.mutate({ id: editingChannel.id, name, values }, done);
+    else m.createChannel.mutate({ kind, name, values }, done);
+  };
+  const removeChannel = (c: Channel) => {
+    if (!window.confirm(t('alerts.ch.removeConfirm', { name: c.name }))) return;
+    m.deleteChannel.mutate(c.id, { onSuccess: () => setEditingChannel(null), onError: failed });
+  };
+
+  const actions = !canManage ? undefined :
+    tab === 'rules' ? <Button variant="primary" icon="plus" onClick={() => setEditingRule(newDraft())}>{t('alerts.rule.new')}</Button>
+    : tab === 'channels' ? <Button variant="primary" icon="plus" onClick={() => setEditingChannel('new')}>{t('alerts.ch.add')}</Button>
+    : undefined;
+
   return (
-    <section className="card card--pad col main" style={{ gap: 16, padding: 20 }}>
-      <div className="row" style={{ gap: 12 }}>
-        <div className="grow" style={{ maxWidth: 420 }}>
-          <TextField label={t('alerts.rule.name')} defaultValue="Edge cihazlarında yeni KEV" />
-        </div>
-        <span className="grow" />
-        <label className="row muted" style={{ fontSize: 12 }}>
-          <Checkbox checked={enabled} onChange={(e) => setEnabled(e.target.checked)} />
-          {t('alerts.rule.enabled')}
-        </label>
+    <div className="mx-auto flex w-full max-w-[1100px] min-w-0 grow flex-col gap-5 p-4 md:p-8">
+      <PageHeader title={t('alerts.title')} subtitle={t('alerts.subtitle')} actions={<>{demo ? <Tag tone="accent">{t('common.demoData')}</Tag> : null}{actions}</>} />
+
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+        <Tile label={t('alerts.sum.rules')} value={`${enabledRules(rules)} / ${rules.length}`} />
+        <Tile
+          label={t('alerts.sum.channels')}
+          value={String(channels.length)}
+          sub={badChannels.length ? t('alerts.sum.channelsBad', { n: badChannels.length }) : t('alerts.sum.channelsOk')}
+          tone={badChannels.length ? 'text-high-ink' : 'text-low-ink'}
+        />
+        <Tile label={t('alerts.sum.today')} value={String(today)} />
       </div>
-      <div className="col gap-8">
-        <span className="caps">{t('alerts.rule.conditions')}</span>
-        {CONDITIONS.map((c, i) => (
-          <div key={i} className="row" style={{ padding: 8, background: 'var(--surface-2)', borderRadius: 'var(--radius-md)' }}>
-            <span className="mono subtle" style={{ width: 40, fontSize: 11, textAlign: 'center' }}>{t(c.join === 'if' ? 'alerts.cond.if' : 'alerts.cond.and')}</span>
-            <select className="cti-select" aria-label={t('alerts.cond.field')} style={{ width: 180 }} defaultValue={c.field}>
-              <option value={c.field}>{t(`alerts.field.${c.field}` as MessageKey)}</option>
-            </select>
-            <select className="cti-select" aria-label={t('alerts.cond.operator')} style={{ width: 110 }} defaultValue={c.op}>
-              <option value={c.op}>{c.op === 'contains' ? t('alerts.op.contains') : c.op}</option>
-            </select>
-            <input className="cti-plain grow" aria-label={t('alerts.cond.value')} defaultValue={c.field === 'event' ? t('alerts.val.newKev') : c.value} />
-            <button type="button" className="icon-btn" aria-label={t('alerts.cond.remove')}><Icon name="x" size={13} /></button>
-          </div>
-        ))}
-        <div><Button size="sm" variant="ghost" icon="plus">{t('alerts.cond.add')}</Button></div>
-      </div>
-      <div className="grid grid-3">
-        <div className="col gap-6">
-          <span style={{ fontSize: 12, fontWeight: 500 }} className="muted">{t('alerts.rule.channel')}</span>
-          <div className="row wrap gap-4"><Tag tone="accent" onRemove={() => undefined}>Slack #soc-alerts</Tag><Tag tone="accent" onRemove={() => undefined}>Email: soc@</Tag></div>
-        </div>
-        <div className="col gap-6">
-          <span style={{ fontSize: 12, fontWeight: 500 }} className="muted">{t('alerts.rule.throttle')}</span>
-          <select className="cti-select" aria-label={t('alerts.rule.throttle')}><option>{t('alerts.throttle.sample')}</option></select>
-        </div>
-        <div className="col gap-6">
-          <span style={{ fontSize: 12, fontWeight: 500 }} className="muted">{t('alerts.rule.severity')}</span>
-          <select className="cti-select" aria-label={t('alerts.rule.severity')}><option>{t('sev.critical')}</option></select>
-        </div>
-      </div>
-      <Banner tone="info" title={t('alerts.preview.title', { n: 7 })}>{t('alerts.preview.text')}</Banner>
-      <span className="grow" />
-      <div className="row" style={{ justifyContent: 'flex-end' }}>
-        <Button>{t('alerts.rule.testSend')}</Button>
-        <Button variant="primary" icon="check">{t('alerts.rule.save')}</Button>
-      </div>
-    </section>
+
+      {atRisk.length > 0 ? (
+        <Banner
+          tone="warning"
+          title={t('alerts.risk.title', { n: atRisk.length })}
+          action={tab !== 'channels' ? <Button size="sm" onClick={() => setTab('channels')}>{t('alerts.risk.fix')}</Button> : undefined}
+        >
+          {t('alerts.risk.text', { channels: failingNames })}
+        </Banner>
+      ) : null}
+      {notice ? <Banner tone={notice.tone} onDismiss={() => setNotice(null)}>{notice.text}</Banner> : null}
+
+      <Tabs
+        label={t('alerts.tabs.label')}
+        value={tab}
+        onChange={(v) => setTab(v as TabId)}
+        items={[
+          { id: 'rules', label: t('alerts.tab.rules'), count: rules.length },
+          { id: 'channels', label: t('alerts.tab.channels'), count: channels.length },
+          { id: 'log', label: t('alerts.tab.log') },
+        ]}
+      />
+
+      {rulesQ.isError || channelsQ.isError || logQ.isError ? (
+        <div className="rounded-xl border border-line bg-surface shadow-card"><LoadError onRetry={() => { void rulesQ.refetch(); void channelsQ.refetch(); void logQ.refetch(); }} /></div>
+      ) : rulesQ.isPending || channelsQ.isPending || logQ.isPending ? (
+        <div className="rounded-xl border border-line bg-surface shadow-card"><LoadingRows /></div>
+      ) : null}
+
+      {tab === 'rules' && rulesQ.isSuccess && channelsQ.isSuccess ? (
+        <RuleList
+          rules={rules}
+          channels={channels}
+          onToggle={(id, on) => m.updateRule.mutate({ id, enabled: on }, { onError: failed })}
+          onEdit={(r) => canManage && setEditingRule({ ...r })}
+          onNew={() => setEditingRule(newDraft())}
+        />
+      ) : null}
+      {tab === 'channels' && channelsQ.isSuccess && rulesQ.isSuccess ? (
+        <ChannelGrid channels={channels} rules={rules} testing={testing} onTest={testChannel} onEdit={(c) => canManage && setEditingChannel(c)} onAdd={() => setEditingChannel('new')} />
+      ) : null}
+      {tab === 'log' && logQ.isSuccess ? <LogFeed log={log} rules={rules} channels={channels} /> : null}
+
+      {editingRule ? (
+        <RuleDrawer
+          key={editingRule.id ?? 'new'}
+          initial={editingRule}
+          isNew={!editingRule.id}
+          channels={channels}
+          saving={m.createRule.isPending || m.updateRule.isPending}
+          onSave={saveRule}
+          onTest={testChannels}
+          onDelete={editingRule.id ? () => deleteRule(editingRule) : undefined}
+          onClose={() => setEditingRule(null)}
+        />
+      ) : null}
+      {editingChannel ? (
+        <ChannelDrawer
+          key={editingChannel === 'new' ? 'new' : editingChannel.id}
+          channel={editingChannel === 'new' ? null : editingChannel}
+          onSave={saveChannel}
+          onRemove={editingChannel === 'new' ? undefined : () => removeChannel(editingChannel)}
+          onClose={() => setEditingChannel(null)}
+        />
+      ) : null}
+    </div>
   );
 }
 
 export default function AlertsPage() {
-  const { t } = useI18n();
-  const [tab, setTab] = useState('rules');
   return (
-    <div className="page">
-      <PageHeader title={t('alerts.title')} actions={<Tag tone="accent">{t('common.demoData')}</Tag>} />
-      <Tabs
-        label={t('alerts.tabs.label')}
-        value={tab}
-        onChange={setTab}
-        items={[
-          { id: 'rules', label: t('alerts.tab.rules'), count: 12 },
-          { id: 'ch', label: t('alerts.tab.channels'), count: 4 },
-          { id: 'log', label: t('alerts.tab.log') },
-        ]}
-      />
-      {tab === 'rules' ? (
-        <div className="split">
-          <RuleEditor />
-          <div className="col gap-16 aside-380">
-            <ChannelList />
-            <LogList />
-          </div>
-        </div>
-      ) : null}
-      {tab === 'ch' ? <div style={{ maxWidth: 640 }}><ChannelList /></div> : null}
-      {tab === 'log' ? <div style={{ maxWidth: 720 }}><LogList /></div> : null}
-    </div>
+    <RequirePermission any={[P.ALERT_READ]}>
+      <Alerts />
+    </RequirePermission>
   );
 }

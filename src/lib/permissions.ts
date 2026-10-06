@@ -13,6 +13,17 @@ export const PERMISSIONS = {
   ROLE_MANAGE: 'role:manage',
   PERMISSION_ASSIGN: 'permission:assign',
   AUDIT_READ: 'audit:read',
+  ASSET_READ: 'asset:read',
+  ASSET_WRITE: 'asset:write',
+  ASSET_DELETE: 'asset:delete',
+  VULN_READ: 'vuln:read',
+  VULN_UPDATE: 'vuln:update',
+  ALERT_READ: 'alert:read',
+  ALERT_MANAGE: 'alert:manage',
+  INTEL_READ: 'intel:read',
+  INTEL_MANAGE: 'intel:manage',
+  REPORT_READ: 'report:read',
+  REPORT_MANAGE: 'report:manage',
 } as const;
 
 /** Permissions that deserve a warning when handed out. */

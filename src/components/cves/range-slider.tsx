@@ -22,11 +22,12 @@ export function RangeSlider({
   const left = ((value[0] - min) / span) * 100;
   const right = ((value[1] - min) / span) * 100;
   return (
-    <div className="range">
-      <div className="range__track" />
-      <div className="range__fill" style={{ left: `${left}%`, right: `${100 - right}%` }} />
+    <div className="relative h-5">
+      <div className="absolute inset-x-0 top-2 h-1 rounded-full bg-surface-3" />
+      <div className="absolute top-2 h-1 rounded-full bg-accent" style={{ left: `${left}%`, right: `${100 - right}%` }} />
       <input
         type="range"
+        className="range-input"
         min={min}
         max={max}
         step={step}
@@ -36,6 +37,7 @@ export function RangeSlider({
       />
       <input
         type="range"
+        className="range-input"
         min={min}
         max={max}
         step={step}

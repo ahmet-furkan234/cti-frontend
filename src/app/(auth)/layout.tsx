@@ -4,10 +4,10 @@ import { AuthFooter } from '@/components/auth/auth-footer';
 
 export default function AuthLayout({ children }: { children: ReactNode }) {
   return (
-    <div className="auth-bg">
-      <div className="row gap-8" style={{ gap: 10 }}>
+    <div className="flex min-h-screen flex-col items-center justify-center gap-8 bg-canvas px-4 py-10">
+      <div className="flex items-center gap-3">
         <BrandMark large />
-        <span style={{ fontSize: 20, lineHeight: '28px', fontWeight: 600 }}>CTI Web</span>
+        <span className="text-xl font-semibold tracking-tight">CTI Web</span>
       </div>
       {children}
       <AuthFooter />

@@ -43,8 +43,8 @@ function CveDetailView() {
 
   if (error instanceof ApiError && error.status === 404) {
     return (
-      <div className="page">
-        <div className="card">
+      <div className="mx-auto flex w-full max-w-[1440px] min-w-0 grow flex-col gap-5 p-4 md:p-8">
+        <div className="min-w-0 rounded-xl border border-line bg-surface shadow-card">
           <StateBlock
             kind="no-results"
             code="404"
@@ -58,8 +58,8 @@ function CveDetailView() {
   }
   if (error) {
     return (
-      <div className="page">
-        <div className="card">
+      <div className="mx-auto flex w-full max-w-[1440px] min-w-0 grow flex-col gap-5 p-4 md:p-8">
+        <div className="min-w-0 rounded-xl border border-line bg-surface shadow-card">
           <StateBlock kind="error" title={t('common.loadError')} description={t('common.tryAgainLater')} action={<Button onClick={() => void refetch()}>{t('common.retry')}</Button>} />
         </div>
       </div>
@@ -67,7 +67,7 @@ function CveDetailView() {
   }
   if (isPending || !cve) {
     return (
-      <div className="page page--tight">
+      <div className="mx-auto flex w-full max-w-[1440px] min-w-0 grow flex-col p-4 md:p-8 gap-4! md:px-8! md:py-6!">
         <Skeleton width={260} height={28} />
         <Skeleton lines={4} height={12} />
       </div>
@@ -83,16 +83,16 @@ function CveDetailView() {
   ];
 
   return (
-    <div className="page page--tight">
-      <nav aria-label={t('cve.breadcrumb')} className="breadcrumb">
-        <Link href="/cves">{t('cves.title')}</Link> / <span className="mono">{cve.id}</span>
+    <div className="mx-auto flex w-full max-w-[1440px] min-w-0 grow flex-col p-4 md:p-8 gap-4! md:px-8! md:py-6!">
+      <nav aria-label={t('cve.breadcrumb')} className="text-sm text-ink-muted [&_a]:text-ink-muted [&_a:hover]:text-ink">
+        <Link href="/cves">{t('cves.title')}</Link> / <span className="font-mono">{cve.id}</span>
       </nav>
 
-      <div className="page-head">
-        <h1 className="h1 h1--mono">{cve.id}</h1>
+      <div className="flex flex-wrap items-center gap-3">
+        <h1 className="text-2xl leading-8 font-semibold tracking-tight font-mono">{cve.id}</h1>
         <SeverityBadge score={cve.cvssScore > 0 ? cve.cvssScore : null} severity={SEVERITY_BY_LEVEL[cve.cvssSeverity]} />
         {cve.isKev ? <KevFlag ransomware={cve.kevRansomware} /> : null}
-        <span className="sub ellipsis" style={{ flex: '1 1 0', minWidth: 120 }} title={cve.description}>{firstSentence(cve.description)}</span>
+        <span className="text-sm text-ink-muted truncate min-w-[120px]" style={{ flex: '1 1 0' }} title={cve.description}>{firstSentence(cve.description)}</span>
         <Button icon="copy" onClick={() => void navigator.clipboard?.writeText(window.location.href)}>{t('cve.copyLink')}</Button>
         <Button variant="primary" icon="alert" disabled title={t('cve.watch.soon')}>{t('cve.watch')}</Button>
       </div>
@@ -111,26 +111,26 @@ function CveDetailView() {
       <Tabs label="CVE" items={tabs} value={tab} onChange={setTab} />
 
       {tab === 'overview' ? (
-        <div className="grid grid-3" style={{ alignItems: 'start' }}>
-          <div className="col gap-16 span-2 min0">
+        <div className="grid gap-4 grid-cols-1 md:grid-cols-2 xl:grid-cols-3" style={{ alignItems: 'start' }}>
+          <div className="flex flex-col gap-4 md:col-span-2 min-w-0">
             <Section title={t('cve.description')}>
-              <p className="muted" style={{ maxWidth: 760 }}>{cve.description || '—'}</p>
+              <p className="text-ink-muted max-w-[760px]">{cve.description || '—'}</p>
               <CvssBreakdown cve={cve} />
             </Section>
             <ProductsTable cve={cve} />
             <ReferencesSummary refs={cve.references} />
           </div>
-          <div className="col gap-16">
+          <div className="flex flex-col gap-4">
             <EpssCard cve={cve} />
             <CweCard cwe={cve.cwe} />
-            <section className="card card--pad col" style={{ gap: 10 }}>
-              <h2 className="h3">{t('cve.timeline')}</h2>
+            <section className="min-w-0 rounded-xl border border-line bg-surface shadow-card p-5 flex flex-col gap-2.5">
+              <h2 className="text-base font-semibold">{t('cve.timeline')}</h2>
               <TimelineList events={events} compact />
             </section>
           </div>
         </div>
       ) : null}
-      {tab === 'assets' ? <AssetsTab /> : null}
+      {tab === 'assets' ? <AssetsTab cveId={cve.id} /> : null}
       {tab === 'refs' ? <ReferencesTab cve={cve} /> : null}
       {tab === 'timeline' ? <TimelineTab cve={cve} /> : null}
     </div>

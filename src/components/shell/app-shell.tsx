@@ -11,7 +11,7 @@ import { Sidebar } from './sidebar';
 import { Topbar } from './topbar';
 
 function currentTheme(): Theme {
-  return typeof document !== 'undefined' && document.documentElement.dataset.theme === 'light' ? 'light' : 'dark';
+  return typeof document !== 'undefined' && document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light';
 }
 
 export function AppShell({ children }: { children: ReactNode }) {
@@ -20,7 +20,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const t = useT();
   const [navOpen, setNavOpen] = useState(false);
-  const [theme, setTheme] = useState<Theme>('dark');
+  const [theme, setTheme] = useState<Theme>('light');
 
   useEffect(() => setTheme(currentTheme()), []);
   useEffect(() => setNavOpen(false), [pathname]);
@@ -30,19 +30,20 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   if (status !== 'authed') {
     return (
-      <div className="auth-bg" role="status" aria-label={t('shell.sessionChecking')}>
+      <div className="flex min-h-screen items-center justify-center bg-canvas" role="status" aria-label={t('shell.sessionChecking')}>
         <Skeleton width={220} height={14} />
       </div>
     );
   }
 
   return (
-    <div className="shell">
+    <div className="flex min-h-screen">
+      {navOpen ? <div className="fixed inset-0 z-30 bg-black/40 lg:hidden" onClick={() => setNavOpen(false)} role="presentation" /> : null}
       <Sidebar open={navOpen} onNavigate={() => setNavOpen(false)} />
-      <div className="main-col">
+      <div className="flex min-w-0 grow flex-col">
         <Topbar onToggleNav={() => setNavOpen((v) => !v)} theme={theme} onThemeChange={setTheme} />
-        <main style={{ display: 'flex', flexDirection: 'column', flexGrow: 1, minWidth: 0 }}>
-          {isLocalSession() ? <Banner tone="info">{t('shell.localPreview')}</Banner> : null}
+        <main className="flex min-w-0 grow flex-col">
+          {isLocalSession() ? <Banner tone="info" className="mx-4 mt-4 md:mx-8">{t('shell.localPreview')}</Banner> : null}
           {children}
         </main>
       </div>

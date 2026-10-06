@@ -12,8 +12,8 @@ export function RequirePermission({ any, children }: { any: string[]; children: 
   const t = useT();
   if (any.length > 0 && !can(...any)) {
     return (
-      <div className="page">
-        <div className="card">
+      <div className="mx-auto flex w-full max-w-[1440px] min-w-0 grow flex-col gap-5 p-4 md:p-8">
+        <div className="min-w-0 rounded-xl border border-line bg-surface shadow-card">
           <StateBlock
             kind="forbidden"
             code="403"
@@ -40,10 +40,10 @@ export function PageHeader({
   mono?: boolean;
 }) {
   return (
-    <div className="page-head">
-      <div className="grow min0">
-        <h1 className={mono ? 'h1 h1--mono' : 'h1'}>{title}</h1>
-        {subtitle ? <div className="sub">{subtitle}</div> : null}
+    <div className="flex flex-wrap items-center gap-3">
+      <div className="grow min-w-0">
+        <h1 className={mono ? 'text-2xl leading-8 font-semibold tracking-tight font-mono' : 'text-2xl leading-8 font-semibold tracking-tight'}>{title}</h1>
+        {subtitle ? <div className="mt-0.5 text-[15px] text-ink-muted">{subtitle}</div> : null}
       </div>
       {actions}
     </div>

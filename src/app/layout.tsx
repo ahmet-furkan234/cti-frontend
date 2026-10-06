@@ -5,9 +5,7 @@ import { Providers } from '@/components/providers';
 import { LANG_COOKIE, type Lang } from '@/i18n/define';
 import { DEFAULT_THEME, THEME_COOKIE, type Theme } from '@/lib/theme';
 // Self-hosted (no build-time network dependency); the @font-face rules carry latin + latin-ext subsets.
-import '@fontsource/ibm-plex-sans/400.css';
-import '@fontsource/ibm-plex-sans/500.css';
-import '@fontsource/ibm-plex-sans/600.css';
+import '@fontsource-variable/figtree';
 import '@fontsource/ibm-plex-mono/400.css';
 import '@fontsource/ibm-plex-mono/500.css';
 import '@/styles/globals.css';
@@ -20,7 +18,7 @@ export const metadata: Metadata = {
 export default async function RootLayout({ children }: { children: ReactNode }) {
   const jar = await cookies();
   const lang: Lang = jar.get(LANG_COOKIE)?.value === 'en' ? 'en' : 'tr';
-  const theme: Theme = (jar.get(THEME_COOKIE)?.value as Theme | undefined) === 'light' ? 'light' : DEFAULT_THEME;
+  const theme: Theme = (jar.get(THEME_COOKIE)?.value as Theme | undefined) === 'dark' ? 'dark' : DEFAULT_THEME;
   return (
     <html lang={lang} data-theme={theme}>
       <body>

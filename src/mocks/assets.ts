@@ -36,22 +36,6 @@ export const ASSET_ROWS: AssetRow[] = [
   { type: 'server', host: 'legacy-ftp', ip: '10.20.9.4', os: 'CentOS 7', crit: 'low', env: 'dev', exposed: false, risk: 22, counts: [0, 0, 3, 8], status: 'archived', seenMin: 132480, source: 'CSV' },
 ];
 
-export interface VersionBar {
-  version: string;
-  count: number;
-  vulnerable: boolean;
-  note: string;
-}
-
-export const OPENSSH_VERSIONS: VersionBar[] = [
-  { version: '8.9p1', count: 118, vulnerable: true, note: 'CVE-2024-6387 · KEV' },
-  { version: '9.6p1', count: 74, vulnerable: false, note: '' },
-  { version: '8.4p1', count: 46, vulnerable: true, note: 'CVE-2023-38408' },
-  { version: '9.8p1', count: 39, vulnerable: false, note: '' },
-  { version: '7.4p1', count: 21, vulnerable: true, note: '14 CVE' },
-  { version: '__other__', count: 14, vulnerable: false, note: '' },
-];
-
 export const ASSET_TYPE_TABS: { id: 'all' | 'srv' | 'ep' | 'net' | 'ctr' | 'cld'; count: number }[] = [
   { id: 'all', count: 2418 }, { id: 'srv', count: 912 }, { id: 'ep', count: 1104 }, { id: 'net', count: 88 }, { id: 'ctr', count: 241 }, { id: 'cld', count: 73 },
 ];

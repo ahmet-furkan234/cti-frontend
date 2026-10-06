@@ -1,47 +1,44 @@
-export interface ReportTemplate {
-  id: 'exec' | 'kev' | 'sla' | 'owner';
-  audience: string;
-  bars: { h: number; tone: 'accent' | 'critical' | 'high' | 'medium' | 'low' | 'teal' }[];
-}
-
-const B = (hs: number[], tones: ReportTemplate['bars'][number]['tone'][]) => hs.map((h, i) => ({ h, tone: tones[i % tones.length]! }));
-
-export const REPORT_TEMPLATES: ReportTemplate[] = [
-  { id: 'exec', audience: 'CISO', bars: B([40, 55, 50, 62, 70, 78], ['accent']) },
-  { id: 'kev', audience: 'SOC', bars: B([90, 70, 40, 20], ['critical', 'high', 'medium', 'low']) },
-  { id: 'sla', audience: 'Mgmt', bars: B([80, 30, 65, 20, 72, 25], ['teal', 'critical']) },
-  { id: 'owner', audience: 'Teams', bars: B([60, 45, 80, 30, 55, 40], ['accent']) },
-];
-
+/** Demo: reports (generation and delivery ship with a later backend phase). */
+export type TemplateId = 'exec' | 'kev' | 'sla' | 'owner';
+export type Freq = 'daily' | 'weekly-mon' | 'weekly-fri' | 'monthly';
+export type Format = 'pdf' | 'csv';
 export interface ReportSchedule {
-  name: string;
-  to: string;
-  freq: string;
-  next: string;
-  status: 'healthy' | 'disabled';
+  id: string;
+  template: TemplateId;
+  /** what the report is limited to, e.g. a team ("Altyapı") */
+  scope?: string;
+  freq: Freq;
+  recipients: string[];
+  formats: Format[];
+  enabled: boolean;
 }
 
 export const REPORT_SCHEDULES: ReportSchedule[] = [
-  { name: 'exec', to: 'ciso@, management@ · PDF', freq: 'weekly-mon', next: '2026-10-05', status: 'healthy' },
-  { name: 'kev', to: 'soc@ · PDF + CSV', freq: 'daily', next: '2026-09-30', status: 'healthy' },
-  { name: 'sla', to: 'management@ · PDF', freq: 'monthly', next: '2026-10-01', status: 'healthy' },
-  { name: 'owner-infra', to: 'infra@ · CSV', freq: 'weekly-fri', next: '2026-10-02', status: 'disabled' },
-  { name: 'owner-app', to: 'apps@ · CSV', freq: 'weekly-fri', next: '2026-10-02', status: 'healthy' },
+  { id: 's1', template: 'exec', freq: 'weekly-mon', recipients: ['ciso@example.com', 'management@example.com'], formats: ['pdf'], enabled: true },
+  { id: 's2', template: 'kev', freq: 'daily', recipients: ['soc@example.com'], formats: ['pdf', 'csv'], enabled: true },
+  { id: 's3', template: 'sla', freq: 'monthly', recipients: ['management@example.com'], formats: ['pdf'], enabled: true },
+  { id: 's4', template: 'owner', scope: 'Altyapı', freq: 'weekly-fri', recipients: ['infra@example.com'], formats: ['csv'], enabled: false },
+  { id: 's5', template: 'owner', scope: 'Uygulama', freq: 'weekly-fri', recipients: ['apps@example.com'], formats: ['csv'], enabled: true },
 ];
 
 export interface ReportRun {
-  name: string;
-  at: string;
+  id: string;
+  template: TemplateId;
+  scope?: string;
+  /** minutes ago */
+  min: number;
   size: string;
-  failed?: boolean;
+  formats: Format[];
+  status: 'ready' | 'failed' | 'generating';
+  manual?: boolean;
 }
 
 export const REPORT_RUNS: ReportRun[] = [
-  { name: 'kev', at: '2026-09-29 07:30', size: '412 KB' },
-  { name: 'exec', at: '2026-09-28 08:00', size: '1.8 MB' },
-  { name: 'kev', at: '2026-09-28 07:30', size: '405 KB' },
-  { name: 'owner-app', at: '2026-09-26 16:00', size: '88 KB' },
-  { name: 'owner-infra', at: '2026-09-26 16:00', size: '—', failed: true },
-  { name: 'sla', at: '2026-09-01 09:00', size: '960 KB' },
-  { name: 'exec-manual', at: '2026-08-29 14:12', size: '1.7 MB' },
+  { id: 'r1', template: 'kev', min: 8 * 60, size: '412 KB', formats: ['pdf', 'csv'], status: 'ready' },
+  { id: 'r2', template: 'exec', min: 31 * 60, size: '1.8 MB', formats: ['pdf'], status: 'ready' },
+  { id: 'r3', template: 'kev', min: 32 * 60, size: '405 KB', formats: ['pdf', 'csv'], status: 'ready' },
+  { id: 'r4', template: 'owner', scope: 'Uygulama', min: 3 * 1440, size: '88 KB', formats: ['csv'], status: 'ready' },
+  { id: 'r5', template: 'owner', scope: 'Altyapı', min: 3 * 1440, size: '—', formats: ['csv'], status: 'failed' },
+  { id: 'r6', template: 'sla', min: 28 * 1440, size: '960 KB', formats: ['pdf'], status: 'ready' },
+  { id: 'r7', template: 'exec', min: 31 * 1440, size: '1.7 MB', formats: ['pdf'], status: 'ready', manual: true },
 ];

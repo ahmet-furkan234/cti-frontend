@@ -35,7 +35,7 @@ src/components/*     shell, dashboard charts, CVE/admin building blocks
 src/i18n/            typed tr/en messages — each key holds both translations
 src/lib/             api client (silent refresh), permissions, formatting, CVSS parser
 src/mocks/           demo data
-src/styles/          tokens.css + components.css (from the design system) + app.css (layout primitives)
+src/styles/globals.css   Tailwind v4 entry: color/radius/font tokens (@theme), light + dark palettes, a few pseudo-element rules
 ```
 
 Conventions: user-visible strings live in `src/i18n/messages/*` (typed keys, tr+en side by side; a test checks
