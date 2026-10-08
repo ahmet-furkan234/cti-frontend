@@ -2,18 +2,16 @@
 
 import { useMemo, useState } from 'react';
 import { AuditFeed } from '@/components/admin/audit-feed';
+import { AuditFilterPanel } from '@/components/admin/audit-filter-panel';
 import { PageHeader, RequirePermission } from '@/components/shell/page-guard';
-import { Button, SearchInput, Select, Skeleton, StateBlock, TextField, cx } from '@/components/ui';
+import { Button, SearchInput, Skeleton, StateBlock, cx } from '@/components/ui';
 import { useAudit } from '@/features/admin/hooks';
-import { useI18n, type MessageKey } from '@/i18n';
+import { useI18n } from '@/i18n';
 import { matchesFilter, type ActivityFilter } from '@/lib/activity';
-import { AUDIT_ACTIONS } from '@/lib/audit-actions';
-import { RANGES, actionLabel, actorOf, matchesSearch, rangeBounds, summarizeAudit, targetOf, type RangeKey } from '@/lib/audit';
+import { actionLabel, actorOf, matchesSearch, rangeBounds, summarizeAudit, targetOf, type RangeKey } from '@/lib/audit';
 import { formatDate } from '@/lib/format';
 import { PERMISSIONS as P } from '@/lib/permissions';
 import type { AuditEntry } from '@/lib/types';
-
-const CATEGORIES: ActivityFilter[] = ['all', 'account', 'access', 'security'];
 
 function csvCell(v: unknown): string {
   const s = v == null ? '' : typeof v === 'object' ? JSON.stringify(v) : String(v);
@@ -44,14 +42,6 @@ function Tile({ label, sub, value, on, onClick, tone }: { label: string; sub: st
     <button type="button" aria-pressed={on} onClick={onClick} className={cx(cls, on ? 'border-accent bg-accent-soft' : 'border-line hover:border-line-strong')}>{body}</button>
   ) : (
     <div className={cx(cls, 'border-line')}>{body}</div>
-  );
-}
-
-function Chip({ on, onClick, children }: { on: boolean; onClick: () => void; children: React.ReactNode }) {
-  return (
-    <button type="button" aria-pressed={on} onClick={onClick} className={cx('inline-flex h-10 shrink-0 items-center rounded-full border px-4 text-[15px] font-medium transition-colors', on ? 'border-transparent bg-accent text-on-accent' : 'border-line-strong bg-surface text-ink-muted hover:text-ink')}>
-      {children}
-    </button>
   );
 }
 
@@ -88,36 +78,18 @@ function AuditView() {
       </div>
 
       <div className="flex flex-col gap-3">
-        <SearchInput shortcut={null} className="w-full md:max-w-lg" placeholder={t('auditlog.search')} value={q} onChange={(e) => setQ(e.target.value)} />
-        <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 md:mx-0 md:flex-wrap md:px-0">
-          <div className="flex gap-2" role="group" aria-label={t('audit.title')}>
-            {CATEGORIES.map((c) => <Chip key={c} on={category === c} onClick={() => setCategory(c)}>{t(`auditlog.cat.${c}` as MessageKey)}</Chip>)}
-          </div>
-          <span className="mx-1 hidden w-px self-stretch bg-line md:block" aria-hidden="true" />
-          <div className="flex gap-2" role="group" aria-label={t('auditlog.f.range')}>
-            {RANGES.map((r) => <Chip key={r} on={range === r} onClick={() => setRange(r)}>{t(`auditlog.range.${r}` as MessageKey)}</Chip>)}
-          </div>
-        </div>
-        <div className="flex flex-wrap items-end gap-3">
-          {range === 'custom' ? (
-            <>
-              <TextField label={t('auditlog.from')} type="date" value={custom.from} onChange={(e) => setCustom((c) => ({ ...c, from: e.target.value }))} />
-              <TextField label={t('auditlog.to')} type="date" value={custom.to} onChange={(e) => setCustom((c) => ({ ...c, to: e.target.value }))} />
-            </>
-          ) : null}
-          <div className="flex min-w-0 flex-col gap-1.5">
-            <span className="text-sm font-medium text-ink">{t('auditlog.f.action')}</span>
-            <Select
-              size="sm"
-              className="min-w-[280px]"
-              aria-label={t('auditlog.f.action')}
-              value={action}
-              onChange={setAction}
-              options={[{ value: '', label: t('auditlog.f.allActions') }, ...AUDIT_ACTIONS.map((a) => ({ value: a, label: actionLabel(t, a), hint: a }))]}
-            />
-          </div>
-          {filtered ? <Button size="sm" variant="ghost" onClick={reset}>{t('auditlog.clear')}</Button> : null}
-        </div>
+        <SearchInput size="lg" shortcut={null} className="w-full shadow-card" placeholder={t('auditlog.search')} value={q} onChange={(e) => setQ(e.target.value)} />
+        <AuditFilterPanel
+          category={category}
+          range={range}
+          custom={custom}
+          action={action}
+          onCategoryChange={setCategory}
+          onRangeChange={setRange}
+          onCustomChange={setCustom}
+          onActionChange={setAction}
+          onClear={() => { setAction(''); setRange('all'); setCustom({ from: '', to: '' }); setCategory('all'); }}
+        />
       </div>
 
       <section className="min-w-0 overflow-hidden rounded-xl border border-line bg-surface shadow-card" aria-busy={audit.isPending}>

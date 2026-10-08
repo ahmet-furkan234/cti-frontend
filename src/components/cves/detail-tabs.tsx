@@ -33,7 +33,7 @@ export function ReferencesTab({ cve }: { cve: CveDetail }) {
 
   return (
     <div className="flex flex-col items-stretch gap-4 xl:flex-row xl:items-start">
-      <section className="min-w-0 rounded-xl border border-line bg-surface shadow-card overflow-hidden main flex flex-col">
+      <section className="flex w-full min-w-0 flex-1 flex-col overflow-hidden rounded-xl border border-line bg-surface shadow-card">
         <div className="flex flex-wrap items-center gap-2 border-b border-line px-5 py-3">
           {(['all', ...groups] as const).map((g) => (
             <button key={g} type="button" className={`inline-flex h-9 items-center gap-1.5 rounded-full border border-line-strong bg-surface px-3.5 text-sm font-medium text-ink-muted hover:text-ink${filter === g ? ' is-on' : ''}`} onClick={() => setFilter(g)}>
@@ -96,7 +96,7 @@ export function TimelineTab({ cve }: { cve: CveDetail }) {
   const { t } = useI18n();
   const events = buildTimeline(cve, t);
   return (
-    <section className="min-w-0 rounded-xl border border-line bg-surface shadow-card p-5 flex flex-col gap-1 max-w-[720px]">
+    <section className="flex w-full min-w-0 flex-col gap-1 rounded-xl border border-line bg-surface p-5 shadow-card">
       <h2 className="text-lg font-semibold pb-2">{t('cve.stream')}</h2>
       <TimelineList events={events} />
     </section>

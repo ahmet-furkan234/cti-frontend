@@ -9,7 +9,7 @@ import { PERMISSIONS as P } from '@/lib/permissions';
 import { initials } from '@/lib/format';
 import { BrandMark } from './brand';
 
-interface NavEntry {
+export interface NavEntry {
   id: string;
   href: string;
   icon: IconName;
@@ -20,7 +20,7 @@ interface NavEntry {
   platformOnly?: boolean;
 }
 
-const MAIN: NavEntry[] = [
+export const MAIN: NavEntry[] = [
   { id: 'dashboard', href: '/', icon: 'dashboard', label: 'nav.dashboard', needs: [P.DASHBOARD_VIEW] },
   { id: 'cves', href: '/cves', icon: 'search', label: 'nav.cves', needs: [P.CVE_READ] },
   { id: 'assets', href: '/assets', icon: 'assets', label: 'nav.assets', needs: [P.ASSET_READ] },
@@ -30,7 +30,7 @@ const MAIN: NavEntry[] = [
   { id: 'reports', href: '/reports', icon: 'report', label: 'nav.reports', needs: [P.REPORT_READ] },
 ];
 
-const ADMIN: NavEntry[] = [
+export const ADMIN: NavEntry[] = [
   { id: 'companies', href: '/admin/companies', icon: 'assets', label: 'nav.companies', needs: [P.COMPANY_READ, P.COMPANY_MANAGE] },
   { id: 'users', href: '/admin/users', icon: 'users', label: 'nav.users', needs: [P.USER_READ, P.ROLE_READ] },
   { id: 'audit', href: '/admin/audit', icon: 'audit', label: 'nav.audit', needs: [P.AUDIT_READ] },
@@ -96,11 +96,13 @@ export function Sidebar({ open, onNavigate }: { open: boolean; onNavigate: () =>
       </div>
       {user ? (
         <div className="m-3 flex items-center gap-3 rounded-xl bg-surface-2 p-3">
-          <span className="inline-flex size-9 shrink-0 items-center justify-center rounded-full bg-accent text-sm font-semibold text-on-accent">{initials(user.name)}</span>
-          <div className="flex min-w-0 grow flex-col">
-            <span className="truncate text-sm font-medium">{user.name}</span>
-            <span className="truncate text-xs text-ink-muted">{user.roles.map((r) => r.name).join(', ') || user.email}</span>
-          </div>
+          <Link href={`/admin/users/${user.id}`} className="flex min-w-0 grow items-center gap-3 rounded-lg" title={t('shell.myProfile')} aria-label={t('shell.myProfile')}>
+            <span className="inline-flex size-9 shrink-0 items-center justify-center rounded-full bg-accent text-sm font-semibold text-on-accent">{initials(user.name)}</span>
+            <div className="flex min-w-0 grow flex-col">
+              <span className="truncate text-sm font-medium">{user.name}</span>
+              <span className="truncate text-xs text-ink-muted">{user.roles.map((r) => r.name).join(', ') || user.email}</span>
+            </div>
+          </Link>
           <IconButton onClick={() => void logout()} title={t('shell.logout')} aria-label={t('shell.logout')}>
             <Icon name="logout" size={16} />
           </IconButton>

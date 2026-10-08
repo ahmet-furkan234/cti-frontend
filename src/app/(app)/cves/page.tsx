@@ -124,10 +124,6 @@ function Explorer() {
         subtitle={
           <>
             {t('cves.subtitle')}
-            <span className="mt-0.5 block text-sm text-ink-subtle">
-              {t('cves.sources')}
-              {nvdUpdated ? ` · ${t('cves.updated', { time: formatTime(nvdUpdated) })}` : ''}
-            </span>
           </>
         }
         actions={<Button icon="copy" onClick={() => exportCsv(items)} disabled={items.length === 0}>{t('common.exportCsv')}</Button>}

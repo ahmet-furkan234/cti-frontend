@@ -132,12 +132,12 @@ function PasswordCard({ userId }: { userId: string }) {
 export function ProfileTab({ user, isSelf, onOpenAccess }: { user: UserDetail; isSelf: boolean; onOpenAccess: () => void }) {
   const { can } = useAuth();
   return (
-    <div className="flex max-w-[1000px] flex-col gap-5">
-      <div className="grid grid-cols-1 items-start gap-5 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
+    <div className="grid min-w-0 grid-cols-1 items-start gap-4 xl:grid-cols-[minmax(0,1fr)_360px]">
+      <div className="flex min-w-0 flex-col gap-4">
         <PersonalCard user={user} isSelf={isSelf} />
-        <SummaryCard user={user} onOpenAccess={onOpenAccess} />
+        {can(P.USER_RESET_PASSWORD) ? <PasswordCard userId={user.id} /> : null}
       </div>
-      {can(P.USER_RESET_PASSWORD) ? <PasswordCard userId={user.id} /> : null}
+      <SummaryCard user={user} onOpenAccess={onOpenAccess} />
     </div>
   );
 }

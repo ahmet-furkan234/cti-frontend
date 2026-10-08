@@ -174,20 +174,29 @@ export function ReferencesSummary({ refs }: { refs: CveReference[] }) {
   const { t } = useI18n();
   const groups: RefGroup[] = ['patch', 'advisory', 'exploit'];
   return (
-    <section className="min-w-0 rounded-xl border border-line bg-surface shadow-card p-5 grid gap-4 grid-cols-1 md:grid-cols-2 xl:grid-cols-3">
-      {groups.map((g) => {
-        const items = refs.filter((r) => groupOfRef(r) === g);
-        return (
-          <div key={g} className="flex flex-col gap-1.5">
-            <span className="text-sm font-medium">{t(`cve.refs.${g}` as MessageKey)} · {items.length}</span>
-            {items.slice(0, 3).map((r) => (
-              <a key={r.url} href={r.url} target="_blank" rel="noopener noreferrer nofollow" className="truncate text-[13px]">
-                {displayUrl(r.url)}
-              </a>
-            ))}
-          </div>
-        );
-      })}
+    <section className="min-w-0 overflow-hidden rounded-xl border border-line bg-surface shadow-card">
+      <div className="flex items-center justify-between border-b border-line px-5 py-4">
+        <h2 className="text-balance text-lg font-semibold">{t('cve.refs.title')}</h2>
+        <span className="text-sm tabular-nums text-ink-muted">{refs.length}</span>
+      </div>
+      <div className="grid grid-cols-1 gap-3 p-4 md:grid-cols-3">
+        {groups.map((g) => {
+          const items = refs.filter((r) => groupOfRef(r) === g);
+          return (
+            <div key={g} className="flex min-w-0 flex-col gap-2 rounded-lg bg-surface-2 p-4">
+              <div className="flex items-center justify-between gap-3">
+                <h3 className="text-sm font-semibold">{t(`cve.refs.${g}` as MessageKey)}</h3>
+                <span className="rounded-md bg-surface-3 px-1.5 py-0.5 text-xs tabular-nums text-ink-muted">{items.length}</span>
+              </div>
+              {items.length === 0 ? <span className="text-sm text-ink-subtle">—</span> : items.slice(0, 3).map((r) => (
+                <a key={r.url} href={r.url} target="_blank" rel="noopener noreferrer nofollow" className="truncate text-[13px]" title={displayUrl(r.url)}>
+                  {displayUrl(r.url)}
+                </a>
+              ))}
+            </div>
+          );
+        })}
+      </div>
     </section>
   );
 }

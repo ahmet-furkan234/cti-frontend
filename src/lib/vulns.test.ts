@@ -18,6 +18,13 @@ describe('vulns', () => {
     expect(statusCounts(VULN_ROWS).all).toBe(VULN_ROWS.length);
   });
 
+  it('filters by technical CVSS, EPSS and environment criteria', () => {
+    const f = noVulnFilters();
+    const rows = filterVulns(VULN_ROWS, { ...f, cvss: [9, 10], epss: 50, env: 'prod' });
+    expect(rows.length).toBeGreaterThan(0);
+    expect(rows.every((r) => r.cvss >= 9 && r.epss >= 0.5 && r.env === 'prod')).toBe(true);
+  });
+
   it('groups by CVE or asset, ranked by risk or fix window', () => {
     const byCve = groupVulns(VULN_ROWS, 'cve', 'risk');
     expect(byCve.find((g) => g.key === 'CVE-2024-6387')!.rows).toHaveLength(2);

@@ -57,7 +57,8 @@ function AccessTab({ user }: { user: UserDetail }) {
   const newSensitive = draft.find((o) => o.effect === 'grant' && SENSITIVE_PERMISSIONS.includes(o.key) && !user.overrides.some((x) => x.key === o.key && x.effect === 'grant'));
 
   return (
-    <div className="flex max-w-[960px] flex-col gap-6">
+    <div className="flex min-w-0 flex-col gap-6">
+      <div className="grid min-w-0 grid-cols-1 items-start gap-6 xl:grid-cols-2">
       {/* 1 · roles */}
       <section className="flex flex-col gap-3">
         <div>
@@ -66,7 +67,7 @@ function AccessTab({ user }: { user: UserDetail }) {
         </div>
         {m.update.isError ? <Banner tone="error">{errorMessage(m.update.error, t('common.tryAgainLater'))}</Banner> : null}
         {m.update.isSuccess && !rolesDirty ? <Banner tone="success">{t('ud.profile.saved')}</Banner> : null}
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-2">
           {roles.data.map((r) => {
             const on = roleIds.includes(r.id);
             return (
@@ -89,16 +90,6 @@ function AccessTab({ user }: { user: UserDetail }) {
             <Button variant="primary" icon="check" disabled={!rolesDirty || roleIds.length === 0} loading={m.update.isPending} onClick={() => m.update.mutate({ roleIds })}>{t('ud.roles.save')}</Button>
           </div>
         ) : null}
-      </section>
-
-      {/* 2 · result */}
-      <section className="flex flex-col gap-3">
-        <div>
-          <h2 className="text-lg font-semibold">{t('ud.access.effectiveTitle')}</h2>
-          <p className="text-sm text-ink-muted">{t('ud.access.effectiveDesc')}</p>
-        </div>
-        <AccessLegend />
-        <AccessSummary areas={areas} roles={chosenRoles} overrides={draft} />
       </section>
 
       {/* 3 · exceptions */}
@@ -171,6 +162,17 @@ function AccessTab({ user }: { user: UserDetail }) {
             <Button variant="primary" icon="check" disabled={!exceptionsDirty} loading={m.setOverrides.isPending} onClick={() => m.setOverrides.mutate(draft)}>{t('exc.save')}</Button>
           </div>
         ) : null}
+      </section>
+      </div>
+
+      {/* 2 · result */}
+      <section className="flex min-w-0 flex-col gap-3">
+        <div>
+          <h2 className="text-lg font-semibold">{t('ud.access.effectiveTitle')}</h2>
+          <p className="text-sm text-ink-muted">{t('ud.access.effectiveDesc')}</p>
+        </div>
+        <AccessLegend />
+        <AccessSummary areas={areas} roles={chosenRoles} overrides={draft} />
       </section>
     </div>
   );
@@ -257,8 +259,10 @@ function UserDetailView() {
 }
 
 export default function UserDetailPage() {
+  const { user: me } = useAuth();
+  const { id } = useParams<{ id: string }>();
   return (
-    <RequirePermission any={[P.USER_READ]}>
+    <RequirePermission any={me?.id === id ? [] : [P.USER_READ]}>
       <UserDetailView />
     </RequirePermission>
   );

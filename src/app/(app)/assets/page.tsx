@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useMemo, useState } from 'react';
 import { PageHeader, RequirePermission } from '@/components/shell/page-guard';
 import { LoadError, LoadingRows } from '@/components/shell/query-state';
+import { AssetFilterPanel } from '@/components/assets/filter-panel';
 import { Banner, Button, Icon, RiskRing, SearchInput, Select, StateBlock, StatusPill, Tag, buttonClass, cx } from '@/components/ui';
 import { useI18n, type MessageKey } from '@/i18n';
 import { useAssets } from '@/features/assets/hooks';
@@ -18,8 +19,6 @@ import { ASSET_ICON } from '@/mocks/assets';
 import type { AssetTab } from '@/lib/types';
 
 const SORTS: SortKey[] = ['risk', 'seen', 'name'];
-const ENVS = ['prod', 'staging', 'dev', 'corp'] as const;
-const CRITS = ['critical', 'high', 'medium', 'low'] as const;
 const VULN_TEXT = { critical: 'text-critical-ink', high: 'text-high-ink', medium: 'text-medium-ink', low: 'text-ink-muted' } as const;
 const CRIT_DOT = { critical: 'bg-critical', high: 'bg-high', medium: 'bg-medium', low: 'bg-low' } as const;
 const ROW_GRID = 'md:grid-cols-[minmax(0,1.7fr)_minmax(0,1.1fr)_minmax(0,1.2fr)_130px_20px]';
@@ -37,14 +36,6 @@ function Tile({ label, sub, value, on, onClick, tone }: { label: string; sub: st
     <button type="button" aria-pressed={on} onClick={onClick} className={cx(cls, on ? 'border-accent bg-accent-soft' : 'border-line hover:border-line-strong')}>{body}</button>
   ) : (
     <div className={cx(cls, 'border-line')}>{body}</div>
-  );
-}
-
-function Chip({ on, onClick, children }: { on: boolean; onClick: () => void; children: React.ReactNode }) {
-  return (
-    <button type="button" aria-pressed={on} onClick={onClick} className={cx('inline-flex h-10 shrink-0 items-center gap-2 rounded-full border px-4 text-[15px] font-medium transition-colors', on ? 'border-transparent bg-accent text-on-accent' : 'border-line-strong bg-surface text-ink-muted hover:text-ink')}>
-      {children}
-    </button>
   );
 }
 
@@ -94,8 +85,6 @@ function AssetRowCard({ r, open, onToggle, canEdit }: { r: AssetItem; open: bool
   );
 }
 
-const TABS: AssetTab[] = ['all', 'srv', 'ep', 'net', 'ctr', 'cld'];
-
 function Assets() {
   const { t, locale } = useI18n();
   const demo = useDemo();
@@ -140,15 +129,15 @@ function Assets() {
       </div>
 
       <div className="flex flex-col gap-3">
-        <SearchInput shortcut={null} className="w-full md:max-w-lg" placeholder={t('assets.searchPlaceholder')} value={filters.q} onChange={(e) => set({ q: e.target.value })} />
-        <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 md:mx-0 md:flex-wrap md:px-0" role="group" aria-label={t('assets.tabs.label')}>
-          {TABS.map((id) => (
-            <Chip key={id} on={tab === id} onClick={() => setTab(id)}>
-              {t(`assets.tab.${id}` as MessageKey)}
-              <span className="text-sm tabular-nums opacity-70">{formatNumber(tabCount(id), locale)}</span>
-            </Chip>
-          ))}
-        </div>
+        <SearchInput size="lg" shortcut={null} className="w-full shadow-card" placeholder={t('assets.searchPlaceholder')} value={filters.q} onChange={(e) => set({ q: e.target.value })} />
+        <AssetFilterPanel
+          filters={filters}
+          tab={tab}
+          onFiltersChange={setFilters}
+          onTabChange={setTab}
+          counts={Object.fromEntries((['all', 'srv', 'ep', 'net', 'ctr', 'cld'] as AssetTab[]).map((id) => [id, tabCount(id)])) as Record<AssetTab, number>}
+          formatCount={(n) => formatNumber(n, locale)}
+        />
       </div>
 
       <section className="min-w-0 overflow-hidden rounded-xl border border-line bg-surface shadow-card">
@@ -156,9 +145,7 @@ function Assets() {
           <div className="grow">
             <span className="text-[15px] font-semibold">{t('assets.results', { n: formatNumber(matches, locale) })}</span>
           </div>
-          <Select size="sm" className="w-44" aria-label={t('assets.f.env')} value={filters.env} onChange={(v) => set({ env: v })} options={[{ value: '', label: t('assets.f.envAll') }, ...ENVS.map((e) => ({ value: e, label: t(`env.${e}` as MessageKey) }))]} />
-          <Select size="sm" className="w-52" aria-label={t('assets.f.crit')} value={filters.crit} onChange={(v) => set({ crit: v as typeof filters.crit })} options={[{ value: '', label: t('assets.f.critAll') }, ...CRITS.map((c) => ({ value: c, label: t(`sev.${c}` as MessageKey) }))]} />
-          <Select size="sm" className="w-48" aria-label={t('assets.sort.label')} value={sort} onChange={(v) => setSort(v as SortKey)} options={SORTS.map((s) => ({ value: s, label: t(`assets.sort.${s}` as MessageKey) }))} />
+          <Select size="sm" className="w-52" aria-label={t('assets.sort.label')} value={sort} onChange={(v) => setSort(v as SortKey)} options={SORTS.map((s) => ({ value: s, label: t(`assets.sort.${s}` as MessageKey) }))} />
         </div>
         {query.isError ? (
           <LoadError onRetry={() => void query.refetch()} />

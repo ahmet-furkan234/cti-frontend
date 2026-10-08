@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useMemo, useState } from 'react';
 import { PageHeader, RequirePermission } from '@/components/shell/page-guard';
 import { ExplainPopover, type ExplainTarget } from '@/components/vulns/explain';
+import { VulnFilterPanel } from '@/components/vulns/filter-panel';
 import { Banner, Button, Icon, KevFlag, RiskRing, SearchInput, Select, SeverityBadge, SlaChip, StateBlock, Tag, cx } from '@/components/ui';
 import { useI18n, type MessageKey } from '@/i18n';
 import { useAuth } from '@/components/auth-provider';
@@ -14,13 +15,12 @@ import { PERMISSIONS as P } from '@/lib/permissions';
 import { ApiError } from '@/lib/api';
 import {
   filterVulns, groupVulns, isOverdue, isSoon, isVulnFiltered, noVulnFilters, statusCounts,
-  type GroupBy, type StatusFilter, type VulnGroup, type VulnSort,
+  type GroupBy, type VulnGroup, type VulnSort,
 } from '@/lib/vulns';
 import { riskOf, type VulnStatus } from '@/mocks/vulns';
 import { LoadError, LoadingRows } from '@/components/shell/query-state';
 
 const STATUSES: VulnStatus[] = ['open', 'in_progress', 'mitigated', 'accepted'];
-const STATUS_TAB: Record<StatusFilter, MessageKey> = { all: 'common.all', open: 'status.open', in_progress: 'status.in_progress', mitigated: 'status.mitigated', accepted: 'vulns.tab.accepted' };
 
 function Tile({ label, sub, value, on, onClick, tone }: { label: string; sub: string; value: number; on: boolean; onClick: () => void; tone?: string }) {
   return (
@@ -28,14 +28,6 @@ function Tile({ label, sub, value, on, onClick, tone }: { label: string; sub: st
       <span className="text-sm text-ink-muted">{label}</span>
       <span className={cx('text-3xl leading-9 font-semibold tabular-nums', value > 0 && tone)}>{value}</span>
       <span className="text-sm text-ink-subtle">{sub}</span>
-    </button>
-  );
-}
-
-function Chip({ on, onClick, children }: { on: boolean; onClick: () => void; children: React.ReactNode }) {
-  return (
-    <button type="button" aria-pressed={on} onClick={onClick} className={cx('inline-flex h-10 shrink-0 items-center gap-2 rounded-full border px-4 text-[15px] font-medium transition-colors', on ? 'border-transparent bg-accent text-on-accent' : 'border-line-strong bg-surface text-ink-muted hover:text-ink')}>
-      {children}
     </button>
   );
 }
@@ -183,19 +175,15 @@ function Vulns() {
       </div>
 
       <div className="flex flex-col gap-3">
-        <SearchInput shortcut={null} className="w-full md:max-w-lg" placeholder={t('vulns.searchPlaceholder')} value={filters.q} onChange={(e) => set({ q: e.target.value })} />
-        <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 md:mx-0 md:flex-wrap md:px-0" role="group" aria-label={t('vulns.tabs.label')}>
-          {(['all', 'open', 'in_progress', 'mitigated', 'accepted'] as StatusFilter[]).map((s) => (
-            <Chip key={s} on={filters.status === s} onClick={() => set({ status: s })}>
-              {t(STATUS_TAB[s])}
-              <span className="text-sm tabular-nums opacity-70">{counts[s]}</span>
-            </Chip>
-          ))}
-          <span className="mx-1 hidden w-px self-stretch bg-line md:block" aria-hidden="true" />
-          <Chip on={filters.kev} onClick={() => set({ kev: !filters.kev })}>{t('vulns.f.kev')}</Chip>
-          <Chip on={filters.exposed} onClick={() => set({ exposed: !filters.exposed })}>{t('vulns.f.exposed')}</Chip>
-          <Chip on={filters.sla} onClick={() => set({ sla: !filters.sla })}>{t('vulns.f.sla')}</Chip>
-        </div>
+        <SearchInput
+          size="lg"
+          shortcut={null}
+          className="w-full shadow-card"
+          placeholder={t('vulns.searchPlaceholder')}
+          value={filters.q}
+          onChange={(e) => set({ q: e.target.value })}
+        />
+        <VulnFilterPanel filters={filters} onChange={setFilters} counts={counts} />
       </div>
 
       {notice ? <Banner tone={notice.tone} onDismiss={() => setNotice(null)}>{notice.text}</Banner> : null}

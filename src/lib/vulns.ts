@@ -11,6 +11,10 @@ export const isSoon = (r: VulnRow) => r.slaHours != null && r.slaHours >= 0 && r
 export interface VulnFilters {
   q: string;
   status: StatusFilter;
+  cvss: [number, number];
+  /** lowest exploit probability in percent, 0 = any */
+  epss: number;
+  env: string;
   kev: boolean;
   exposed: boolean;
   /** only matches whose fix window is overdue or running out */
@@ -18,14 +22,25 @@ export interface VulnFilters {
   /** only matches whose fix window has already been missed */
   overdue: boolean;
 }
-export const noVulnFilters = (): VulnFilters => ({ q: '', status: 'all', kev: false, exposed: false, sla: false, overdue: false });
-export const isVulnFiltered = (f: VulnFilters) => !!(f.q.trim() || f.status !== 'all' || f.kev || f.exposed || f.sla || f.overdue);
+export const noVulnFilters = (): VulnFilters => ({ q: '', status: 'all', cvss: [0, 10], epss: 0, env: '', kev: false, exposed: false, sla: false, overdue: false });
+export const isVulnFiltered = (f: VulnFilters) => !!(f.q.trim() || f.status !== 'all' || f.cvss[0] > 0 || f.cvss[1] < 10 || f.epss > 0 || f.env || f.kev || f.exposed || f.sla || f.overdue);
+
+/** Number of technical filter groups currently narrowing the result set. */
+export const activeVulnFilterCount = (f: VulnFilters) =>
+  (f.status !== 'all' ? 1 : 0) +
+  (f.cvss[0] > 0 || f.cvss[1] < 10 ? 1 : 0) +
+  (f.epss > 0 || f.kev ? 1 : 0) +
+  (f.env || f.exposed ? 1 : 0) +
+  (f.sla || f.overdue ? 1 : 0);
 
 export function filterVulns<T extends VulnRow>(rows: T[], f: VulnFilters): T[] {
   const term = f.q.trim().toLowerCase();
   return rows.filter(
     (r) =>
       (f.status === 'all' || r.status === f.status) &&
+      r.cvss >= f.cvss[0] && r.cvss <= f.cvss[1] &&
+      (f.epss === 0 || r.epss * 100 >= f.epss) &&
+      (!f.env || r.env === f.env) &&
       (!f.kev || r.kev) &&
       (!f.exposed || r.exposed) &&
       (!f.sla || isOverdue(r) || isSoon(r)) &&

@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
-import { Suspense } from 'react';
+import { Suspense, type ReactNode } from 'react';
 import { RequirePermission } from '@/components/shell/page-guard';
 import { AssetsTab, ReferencesTab, TimelineTab } from '@/components/cves/detail-tabs';
 import { VectorTab } from '@/components/cves/vector-tab';
@@ -23,6 +23,16 @@ const TAB_IDS: TabId[] = ['overview', 'assets', 'refs', 'vector', 'timeline'];
 function firstSentence(text: string, max = 110): string {
   const s = text.split(/(?<=[.!?])\s/)[0] ?? text;
   return s.length > max ? `${s.slice(0, max - 1)}…` : s;
+}
+
+function OverviewMetric({ label, value, detail, tone = 'default' }: { label: string; value: ReactNode; detail: string; tone?: 'default' | 'critical' | 'accent' }) {
+  return (
+    <div className="flex min-w-0 flex-col gap-1 rounded-xl border border-line bg-surface px-5 py-4 shadow-card">
+      <span className="text-sm font-medium text-ink-muted">{label}</span>
+      <span className={tone === 'critical' ? 'text-2xl font-semibold tabular-nums text-critical-ink' : tone === 'accent' ? 'text-2xl font-semibold tabular-nums text-accent' : 'text-2xl font-semibold tabular-nums text-ink'}>{value}</span>
+      <span className="truncate text-xs text-ink-subtle" title={detail}>{detail}</span>
+    </div>
+  );
 }
 
 function CveDetailView() {
@@ -113,21 +123,53 @@ function CveDetailView() {
       <Tabs label="CVE" items={tabs} value={tab} onChange={setTab} />
 
       {tab === 'overview' ? (
-        <div className="grid gap-4 grid-cols-1 md:grid-cols-2 xl:grid-cols-3" style={{ alignItems: 'start' }}>
-          <div className="flex flex-col gap-4 md:col-span-2 min-w-0">
-            <Section title={t('cve.description')}>
-              <p className="text-ink-muted max-w-[760px]">{cve.description || '—'}</p>
-            </Section>
-            <ProductsTable cve={cve} />
-            <ReferencesSummary refs={cve.references} />
+        <div className="flex min-w-0 flex-col gap-4">
+          <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
+            <OverviewMetric
+              label={t('cve.overview.cvss')}
+              value={cve.cvssScore > 0 ? cve.cvssScore.toFixed(1) : '—'}
+              detail={cve.cvssVersion ? `CVSS ${cve.cvssVersion}` : t('cve.notScored.short')}
+              tone={cve.cvssSeverity >= 4 ? 'critical' : 'default'}
+            />
+            <OverviewMetric
+              label={t('cve.overview.epss')}
+              value={cve.epss > 0 ? `%${(cve.epss * 100).toFixed(1)}` : '—'}
+              detail={cve.epssPercentile > 0 ? t('cve.overview.percentile', { n: Math.round(cve.epssPercentile * 100) }) : t('epss.pending.desc')}
+              tone="accent"
+            />
+            <OverviewMetric
+              label={t('cve.overview.configs')}
+              value={cve.cpeMatches.length}
+              detail={t('cve.overview.vendors', { n: cve.vendors.length })}
+            />
+            <OverviewMetric
+              label={t('cve.overview.refs')}
+              value={cve.references.length}
+              detail={cve.cwe.length ? cve.cwe.join(' · ') : t('cve.cwe.none')}
+            />
           </div>
-          <div className="flex flex-col gap-4">
-            <EpssCard cve={cve} />
-            <CweCard cwe={cve.cwe} />
-            <section className="min-w-0 rounded-xl border border-line bg-surface shadow-card p-5 flex flex-col gap-2.5">
-              <h2 className="text-base font-semibold">{t('cve.timeline')}</h2>
-              <TimelineList events={events} compact />
-            </section>
+
+          <div className="grid min-w-0 grid-cols-1 items-start gap-4 xl:grid-cols-[minmax(0,1fr)_360px]">
+            <div className="flex min-w-0 flex-col gap-4">
+              <Section title={t('cve.description')}>
+                <p className="text-pretty leading-7 text-ink-muted">{cve.description || '—'}</p>
+                <dl className="mt-2 grid grid-cols-1 gap-3 border-t border-line pt-4 sm:grid-cols-3">
+                  <div className="min-w-0"><dt className="text-xs font-medium text-ink-subtle">{t('cve.overview.published')}</dt><dd className="mt-1 text-sm tabular-nums text-ink">{formatDate(cve.published)}</dd></div>
+                  <div className="min-w-0"><dt className="text-xs font-medium text-ink-subtle">{t('cve.overview.modified')}</dt><dd className="mt-1 text-sm tabular-nums text-ink">{formatDate(cve.lastModified)}</dd></div>
+                  <div className="min-w-0"><dt className="text-xs font-medium text-ink-subtle">{t('cve.overview.status')}</dt><dd className="mt-1 truncate text-sm text-ink">{cve.vulnStatus || '—'}</dd></div>
+                </dl>
+              </Section>
+              <ProductsTable cve={cve} />
+              <ReferencesSummary refs={cve.references} />
+            </div>
+            <aside className="flex min-w-0 flex-col gap-4">
+              <EpssCard cve={cve} />
+              <CweCard cwe={cve.cwe} />
+              <section className="flex min-w-0 flex-col gap-2.5 rounded-xl border border-line bg-surface p-5 shadow-card">
+                <h2 className="text-balance text-base font-semibold">{t('cve.timeline')}</h2>
+                <TimelineList events={events} compact />
+              </section>
+            </aside>
           </div>
         </div>
       ) : null}
