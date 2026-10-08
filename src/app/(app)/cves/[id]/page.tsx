@@ -30,7 +30,7 @@ function OverviewMetric({ label, value, detail, tone = 'default' }: { label: str
     <div className="flex min-w-0 flex-col gap-1 rounded-xl border border-line bg-surface px-5 py-4 shadow-card">
       <span className="text-sm font-medium text-ink-muted">{label}</span>
       <span className={tone === 'critical' ? 'text-2xl font-semibold tabular-nums text-critical-ink' : tone === 'accent' ? 'text-2xl font-semibold tabular-nums text-accent' : 'text-2xl font-semibold tabular-nums text-ink'}>{value}</span>
-      <span className="truncate text-xs text-ink-subtle" title={detail}>{detail}</span>
+      <span className="break-words text-xs leading-5 text-ink-subtle">{detail}</span>
     </div>
   );
 }

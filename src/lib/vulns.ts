@@ -30,8 +30,7 @@ export const activeVulnFilterCount = (f: VulnFilters) =>
   (f.status !== 'all' ? 1 : 0) +
   (f.cvss[0] > 0 || f.cvss[1] < 10 ? 1 : 0) +
   (f.epss > 0 || f.kev ? 1 : 0) +
-  (f.env || f.exposed ? 1 : 0) +
-  (f.sla || f.overdue ? 1 : 0);
+  (f.env || f.exposed ? 1 : 0);
 
 export function filterVulns<T extends VulnRow>(rows: T[], f: VulnFilters): T[] {
   const term = f.q.trim().toLowerCase();

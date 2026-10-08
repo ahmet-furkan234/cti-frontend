@@ -5,7 +5,7 @@ import { useMemo, useState } from 'react';
 import { PageHeader, RequirePermission } from '@/components/shell/page-guard';
 import { ExplainPopover, type ExplainTarget } from '@/components/vulns/explain';
 import { VulnFilterPanel } from '@/components/vulns/filter-panel';
-import { Banner, Button, Icon, KevFlag, RiskRing, SearchInput, Select, SeverityBadge, SlaChip, StateBlock, Tag, cx } from '@/components/ui';
+import { Banner, Button, Icon, KevFlag, RiskRing, SearchInput, Select, SeverityBadge, StateBlock, Tag, cx } from '@/components/ui';
 import { useI18n, type MessageKey } from '@/i18n';
 import { useAuth } from '@/components/auth-provider';
 import { useSetVulnStatus, useVulns } from '@/features/vulns/hooks';
@@ -14,8 +14,8 @@ import { useDemo } from '@/lib/demo';
 import { PERMISSIONS as P } from '@/lib/permissions';
 import { ApiError } from '@/lib/api';
 import {
-  filterVulns, groupVulns, isOverdue, isSoon, isVulnFiltered, noVulnFilters, statusCounts,
-  type GroupBy, type VulnGroup, type VulnSort,
+  filterVulns, groupVulns, isVulnFiltered, noVulnFilters, statusCounts,
+  type GroupBy, type VulnGroup,
 } from '@/lib/vulns';
 import { riskOf, type VulnStatus } from '@/mocks/vulns';
 import { LoadError, LoadingRows } from '@/components/shell/query-state';
@@ -52,7 +52,7 @@ function MatchRow({ r, by, onStatus, onExplain, canEdit }: { r: VulnItem; by: Gr
   const risk = riskOf(r);
   const name = by === 'cve' ? r.host : r.cve;
   return (
-    <div className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-x-4 gap-y-3 border-t border-line px-5 py-3.5 md:grid-cols-[auto_minmax(0,1fr)_120px_176px]">
+    <div className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-x-4 gap-y-3 border-t border-line px-5 py-3.5 md:grid-cols-[auto_minmax(0,1fr)_176px]">
       <button type="button" aria-label={t('vulns.why', { score: risk })} title={t('vulns.why', { score: risk })} onClick={onExplain} className="rounded-full">
         <RiskRing score={risk} size={40} />
       </button>
@@ -73,7 +73,6 @@ function MatchRow({ r, by, onStatus, onExplain, canEdit }: { r: VulnItem; by: Gr
           </>
         )}
       </div>
-      <div className="col-span-2 md:col-span-1">{r.slaHours != null ? <SlaChip hoursLeft={r.slaHours} /> : null}</div>
       <div className="col-span-2 md:col-span-1"><StatusSelect value={r.status} onChange={onStatus} name={name} disabled={!canEdit} /></div>
     </div>
   );
@@ -102,7 +101,6 @@ function GroupCard({ g, open, onToggle, onSetAll, onStatus, onExplain, canEdit }
           </span>
           <span className="truncate text-sm text-ink-muted">{sub}</span>
         </span>
-        {g.sla != null ? <span className="hidden sm:block"><SlaChip hoursLeft={g.sla} /></span> : null}
         <Icon name="down" size={18} className={cx('shrink-0 text-ink-subtle transition-transform', open && 'rotate-180')} />
       </button>
       {open ? (
@@ -142,14 +140,13 @@ function Vulns() {
   const rows = useMemo(() => (query.data?.items ?? []).map(toVulnItem), [query.data]);
   const [filters, setFilters] = useState(noVulnFilters);
   const [by, setBy] = useState<GroupBy>('cve');
-  const [sort, setSort] = useState<VulnSort>('risk');
   const [openKey, setOpenKey] = useState<string | null>(null);
   const [explain, setExplain] = useState<ExplainTarget | null>(null);
   const [notice, setNotice] = useState<{ tone: 'success' | 'error'; text: string } | null>(null);
   const set = (patch: Partial<typeof filters>) => setFilters((f) => ({ ...f, ...patch }));
 
   const visible = useMemo(() => filterVulns(rows, filters), [rows, filters]);
-  const groups = useMemo(() => groupVulns(visible, by, sort), [visible, by, sort]);
+  const groups = useMemo(() => groupVulns(visible, by, 'risk'), [visible, by]);
   // Tab counts ignore the status filter itself so each chip shows what it would give.
   const counts = useMemo(() => statusCounts(filterVulns(rows, { ...filters, status: 'all' })), [rows, filters]);
   const filtered = isVulnFiltered(filters);
@@ -167,9 +164,7 @@ function Vulns() {
     <div className="mx-auto flex w-full max-w-[1100px] min-w-0 grow flex-col gap-5 p-4 md:p-8">
       <PageHeader title={t('vulns.title')} subtitle={t('vulns.subtitle')} actions={demo ? <Tag tone="accent">{t('common.demoData')}</Tag> : undefined} />
 
-      <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
-        <Tile label={t('vulns.tile.overdue')} sub={t('vulns.tile.overdue.sub')} value={rows.filter(isOverdue).length} on={filters.overdue} onClick={() => set({ overdue: !filters.overdue })} tone="text-critical-ink" />
-        <Tile label={t('vulns.tile.soon')} sub={t('vulns.tile.soon.sub')} value={rows.filter(isSoon).length} on={filters.sla} onClick={() => set({ sla: !filters.sla })} tone="text-high-ink" />
+      <div className="grid grid-cols-2 gap-3">
         <Tile label={t('vulns.tile.kev')} sub={t('vulns.tile.kev.sub')} value={rows.filter((r) => r.kev).length} on={filters.kev} onClick={() => set({ kev: !filters.kev })} tone="text-critical-ink" />
         <Tile label={t('vulns.tile.open')} sub={t('vulns.tile.open.sub')} value={rows.filter((r) => r.status === 'open').length} on={filters.status === 'open'} onClick={() => set({ status: filters.status === 'open' ? 'all' : 'open' })} />
       </div>
@@ -201,7 +196,6 @@ function Vulns() {
             </button>
           ))}
         </div>
-        <Select size="sm" className="w-52" aria-label={t('vulns.sort.label')} value={sort} onChange={(v) => setSort(v as VulnSort)} options={(['risk', 'sla'] as VulnSort[]).map((s) => ({ value: s, label: t(`vulns.sort.${s}` as MessageKey) }))} />
       </div>
 
       {query.isError ? (

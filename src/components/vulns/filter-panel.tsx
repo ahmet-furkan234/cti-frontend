@@ -55,7 +55,6 @@ export function VulnFilterPanel({ filters, onChange, counts }: { filters: VulnFi
   else if (min > 0 || max < 10) tags.push({ key: 'cvss', label: `CVSS ${min.toFixed(1)}–${max.toFixed(1)}`, remove: () => set({ cvss: [0, 10] }) });
   if (filters.kev || filters.epss > 0) tags.push({ key: 'threat', label: [filters.kev ? 'CISA KEV' : '', filters.epss > 0 ? `EPSS ≥ %${filters.epss}` : ''].filter(Boolean).join(' · '), remove: () => set({ kev: false, epss: 0 }) });
   if (filters.env || filters.exposed) tags.push({ key: 'asset', label: [filters.env || '', filters.exposed ? t('vulns.f.exposed') : ''].filter(Boolean).join(' · '), remove: () => set({ env: '', exposed: false }) });
-  if (filters.overdue || filters.sla) tags.push({ key: 'sla', label: t(filters.overdue ? 'vulns.f.overdue' : 'vulns.f.sla'), remove: () => set({ overdue: false, sla: false }) });
 
   return (
     <section className="min-w-0 rounded-xl border border-line bg-surface shadow-card" aria-label={t('vulns.filters')}>
@@ -86,10 +85,6 @@ export function VulnFilterPanel({ filters, onChange, counts }: { filters: VulnFi
         <Block title={t('vulns.f.asset')}>
           <Select aria-label={t('vulns.f.env')} value={filters.env} onChange={(env) => set({ env })} options={[{ value: '', label: t('vulns.f.envAll') }, ...ENVS.map((env) => ({ value: env, label: t(`env.${env}` as MessageKey) }))]} />
           <Switch checked={filters.exposed} onChange={(exposed) => set({ exposed })} label={t('vulns.f.exposed')} />
-        </Block>
-        <Block title={t('vulns.f.remediation')}>
-          <Switch checked={filters.sla} onChange={(sla) => set({ sla, ...(sla ? {} : { overdue: false }) })} label={t('vulns.f.sla')} />
-          <Switch checked={filters.overdue} onChange={(overdue) => set({ overdue, ...(overdue ? { sla: true } : {}) })} label={t('vulns.f.overdue')} />
         </Block>
       </div> : null}
     </section>

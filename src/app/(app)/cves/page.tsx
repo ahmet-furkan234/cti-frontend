@@ -129,7 +129,7 @@ function Explorer() {
         actions={<Button icon="copy" onClick={() => exportCsv(items)} disabled={items.length === 0}>{t('common.exportCsv')}</Button>}
       />
 
-      <SearchInput size="lg" value={q} onChange={(e) => setQ(e.target.value)} placeholder={t('cves.searchPlaceholder')} />
+      <SearchInput size="lg" shortcut={null} value={q} onChange={(e) => setQ(e.target.value)} placeholder={t('cves.searchPlaceholder')} />
 
       <FilterPanel filters={filters} onChange={setFilters} canAssets={canAssets} vendorError={needsVendor} windowActive={!!(window.from || window.to)} />
 

@@ -91,6 +91,11 @@ function CompanySection() {
   const items = vulns.data?.items;
   const x = items ? summarizeExposure(items) : null;
   const loading = !stats || !x;
+  const heroDetail = x
+    ? [x.kevExposed > 0 ? t('dash.co.hero.exposed', { n: nf(x.kevExposed) }) : null, x.overdue > 0 ? t('dash.co.hero.overdue', { n: nf(x.overdue) }) : null]
+      .filter(Boolean)
+      .join(' ')
+    : '';
 
   if (stats && stats.total === 0) return <EmptyInventory />;
 
@@ -104,9 +109,7 @@ function CompanySection() {
             ) : (
               <>
                 <p className="m-0 text-xl leading-7 font-semibold tracking-tight text-ink">{t('dash.co.hero.some', { n: nf(x.active), k: nf(x.kev) })}</p>
-                <p className="m-0 text-[15px] text-ink-muted">
-                  {[x.kevExposed > 0 ? t('dash.co.hero.exposed', { n: nf(x.kevExposed) }) : null, x.overdue > 0 ? t('dash.co.hero.overdue', { n: nf(x.overdue) }) : null].filter(Boolean).join(' ')}
-                </p>
+                {heroDetail ? <p className="m-0 text-[15px] text-ink-muted">{heroDetail}</p> : null}
               </>
             )
           ) : (

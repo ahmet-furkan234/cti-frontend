@@ -1,6 +1,6 @@
 'use client';
 
-import { usePathname, useRouter } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react';
 import { createPortal } from 'react-dom';
@@ -39,7 +39,6 @@ export function GlobalSearch() {
   const { t } = useI18n();
   const { can } = useAuth();
   const router = useRouter();
-  const pathname = usePathname();
   const input = useRef<HTMLInputElement>(null);
   const list = useRef<HTMLDivElement>(null);
   const [q, setQ] = useState('');
@@ -99,7 +98,7 @@ export function GlobalSearch() {
   const loading = searching && [assets, users, cves].some((x) => x.isFetching);
   useEffect(() => setActive(0), [term]);
   useEffect(() => setMounted(true), []);
-  // "/" (outside text fields; the CVE Explorer keeps it for its own box) and Ctrl/⌘+K open the search from anywhere.
+  // "/" outside regular text fields and Ctrl/⌘+K open the search from anywhere.
   useEffect(() => {
     const onKey = (e: globalThis.KeyboardEvent) => {
       const el = e.target as HTMLElement | null;
@@ -108,14 +107,15 @@ export function GlobalSearch() {
         && el !== input.current
         && (el.type === 'search' || el.getAttribute('role') === 'searchbox');
       const combo = (e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k';
-      const slash = e.key === '/' && !e.metaKey && !e.ctrlKey && !e.altKey && (!typing || localSearch) && pathname !== '/cves';
+      const slash = e.key === '/' && !e.metaKey && !e.ctrlKey && !e.altKey && (!typing || localSearch);
       if (!combo && !slash) return;
       e.preventDefault();
+      if (slash) e.stopPropagation();
       setOpen(true);
     };
-    document.addEventListener('keydown', onKey);
-    return () => document.removeEventListener('keydown', onKey);
-  }, [pathname]);
+    document.addEventListener('keydown', onKey, { capture: true });
+    return () => document.removeEventListener('keydown', onKey, { capture: true });
+  }, []);
   useEffect(() => {
     if (!open) return;
     const prev = document.body.style.overflow;
