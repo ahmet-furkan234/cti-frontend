@@ -104,8 +104,11 @@ export function GlobalSearch() {
     const onKey = (e: globalThis.KeyboardEvent) => {
       const el = e.target as HTMLElement | null;
       const typing = el?.tagName === 'INPUT' || el?.tagName === 'TEXTAREA' || el?.tagName === 'SELECT' || el?.isContentEditable;
+      const localSearch = el instanceof HTMLInputElement
+        && el !== input.current
+        && (el.type === 'search' || el.getAttribute('role') === 'searchbox');
       const combo = (e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k';
-      const slash = e.key === '/' && !e.metaKey && !e.ctrlKey && !e.altKey && !typing && pathname !== '/cves';
+      const slash = e.key === '/' && !e.metaKey && !e.ctrlKey && !e.altKey && (!typing || localSearch) && pathname !== '/cves';
       if (!combo && !slash) return;
       e.preventDefault();
       setOpen(true);
