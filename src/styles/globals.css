@@ -197,3 +197,7 @@
   background-size: 200% 100%;
   animation: shimmer 1.4s ease-in-out infinite;
 }
+
+/* No default scrollbars anywhere; content still scrolls with wheel, touch and keyboard. */
+* { scrollbar-width: none; }
+*::-webkit-scrollbar { display: none; }
