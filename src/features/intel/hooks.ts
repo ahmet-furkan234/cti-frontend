@@ -1,9 +1,16 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
-import type { IocDto, IocListResponse, WatchlistDto } from '@/lib/types';
+import type { IntelFindingsResponse, IocAssetDto, IocDto, IocListResponse, NewKevDto, WatchlistDto } from '@/lib/types';
 
 export const useWatchlists = () => useQuery({ queryKey: ['watchlists'], queryFn: () => api<{ items: WatchlistDto[] }>('/intel/watchlists') });
 export const useIocs = () => useQuery({ queryKey: ['iocs'], queryFn: () => api<IocListResponse>('/intel/iocs', { query: { limit: 200 } }) });
+
+export const useFindings = (days: number, watchlistId: string | null) =>
+  useQuery({ queryKey: ['intel-findings', days, watchlistId], queryFn: () => api<IntelFindingsResponse>('/intel/findings', { query: { days, watchlistId, limit: 100 } }) });
+export const useNewKev = (days: number) =>
+  useQuery({ queryKey: ['intel-new-kev', days], queryFn: () => api<{ items: NewKevDto[] }>('/intel/new-kev', { query: { days } }) });
+export const useIocAssets = (id: string, enabled: boolean) =>
+  useQuery({ queryKey: ['ioc-assets', id], enabled, queryFn: () => api<{ items: IocAssetDto[] }>(`/intel/iocs/${id}/assets`) });
 
 export type WatchlistBody = Omit<WatchlistDto, 'id' | 'count' | 'hits'>;
 

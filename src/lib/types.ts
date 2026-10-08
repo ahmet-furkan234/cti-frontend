@@ -440,6 +440,41 @@ export interface IocListResponse {
   expiring: number;
 }
 
+export interface IntelFindingDto {
+  id: string;
+  watchlistId: string;
+  watchlist: string;
+  cve: string;
+  cvss: number;
+  kev: boolean;
+  epss: number;
+  assetId: string;
+  asset: string;
+  env: string;
+  component: string;
+  firstSeenAt: string;
+}
+export interface IntelFindingsResponse {
+  items: IntelFindingDto[];
+  total: number;
+}
+export interface IocAssetDto {
+  id: string;
+  name: string;
+  addr: string | null;
+  env: string;
+  exposed: boolean;
+  openVulns: number;
+}
+export interface NewKevDto {
+  cve: string;
+  cvss: number;
+  epss: number;
+  ransomware: boolean;
+  addedAt: string;
+  assets: number;
+}
+
 /* ---- reports */
 export interface ReportScheduleDto {
   id: string;

@@ -3,7 +3,7 @@
 import { useMemo, useState } from 'react';
 import { useAuth } from '@/components/auth-provider';
 import { AddIndicatorsDrawer, IndicatorList } from '@/components/intel/indicators';
-import { Overview } from '@/components/intel/overview';
+import { IntelDashboard } from '@/components/intel/dashboard';
 import { WatchlistDrawer, WatchlistGrid, newWatchlist, type WatchlistDraft } from '@/components/intel/watchlists';
 import { PageHeader, RequirePermission } from '@/components/shell/page-guard';
 import { LoadError, LoadingRows } from '@/components/shell/query-state';
@@ -42,6 +42,8 @@ function Intel() {
   const [editing, setEditing] = useState<WatchlistDraft | null>(null);
   const [adding, setAdding] = useState(false);
   const [focusId, setFocusId] = useState<string | null>(null);
+  const [days, setDays] = useState(7);
+  const [watchlistId, setWatchlistId] = useState<string | null>(null);
   const [notice, setNotice] = useState<{ tone: 'success' | 'error'; text: string } | null>(null);
   const failed = (e: unknown) => setNotice({ tone: 'error', text: e instanceof ApiError && e.code === 'LOCAL_PREVIEW' ? t('asset.err.demo') : t('common.tryAgainLater') });
 
@@ -110,12 +112,7 @@ function Intel() {
       ) : null}
 
       {tab === 'overview' && !loading && !errored ? (
-        <Overview
-          iocs={iocs}
-          watchlists={lists}
-          onOpenIoc={(id) => { setFocusId(id); setTab('indicators'); }}
-          onOpenWatchlists={() => setTab('watchlists')}
-        />
+        <IntelDashboard days={days} onDays={setDays} watchlistId={watchlistId} onWatchlist={setWatchlistId} lists={lists} iocs={iocs} />
       ) : null}
       {tab === 'watchlists' && !loading && !errored ? (
         <WatchlistGrid
@@ -123,6 +120,7 @@ function Intel() {
           onToggle={(id, on) => m.updateWatchlist.mutate({ id, enabled: on }, { onError: failed })}
           onEdit={(w) => canManage && setEditing({ ...w })}
           onNew={() => setEditing(newWatchlist())}
+          onShow={(id) => { setWatchlistId(id); setTab('overview'); }}
         />
       ) : null}
       {tab === 'indicators' && !loading && !errored ? <IndicatorList key={focusId ?? 'all'} iocs={iocs} total={iocsQ.data?.total ?? 0} focusId={focusId} onAdd={() => canManage && setAdding(true)} onDelete={canManage ? deleteIoc : undefined} /> : null}

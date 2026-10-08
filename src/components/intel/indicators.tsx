@@ -1,8 +1,8 @@
 'use client';
 
-import Link from 'next/link';
 import { useMemo, useState } from 'react';
 import { Drawer } from '@/components/admin/admin-parts';
+import { IocAssets } from '@/components/intel/ioc-assets';
 import { Banner, Button, Icon, MonoText, SearchInput, StateBlock, Switch, cx } from '@/components/ui';
 import { useI18n, type MessageKey } from '@/i18n';
 import { IOC_GROUP, IOC_ICON, IOC_TYPES, confidenceOf, daysLeft, detectIocType, type IocGroup } from '@/lib/intel';
@@ -50,7 +50,10 @@ function Row({ ioc, open, onToggle, onDelete }: { ioc: Ioc; open: boolean; onTog
           <dt className="text-ink-muted">{t('intel.ioc.expires')}</dt><dd className="m-0">{ioc.expires ?? t('intel.ioc.exp.never')}</dd>
           {onDelete ? <dd className="col-span-2 m-0 pt-2"><Button size="sm" variant="danger" icon="trash" onClick={onDelete}>{t('intel.ioc.delete')}</Button></dd> : null}
           {ioc.matches > 0 ? (
-            <dd className="col-span-2 m-0 pt-2"><Link href="/assets" className="inline-flex h-8 items-center rounded-lg bg-critical-soft px-3 text-sm font-medium text-critical-ink no-underline hover:text-critical-ink">{t('intel.ioc.viewAssets')}</Link></dd>
+            <dd className="col-span-2 m-0 pt-2">
+              <div className="mb-1 text-sm font-medium text-ink-muted">{t('intel.ioc.viewAssets')}</div>
+              <IocAssets id={ioc.id} />
+            </dd>
           ) : null}
         </dl>
       ) : null}

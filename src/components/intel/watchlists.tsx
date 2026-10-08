@@ -28,13 +28,15 @@ export function ruleLines(t: TFunction, w: Pick<Watchlist, 'vendors' | 'products
   return [what.join(' · '), filters.join(' · ')].filter(Boolean);
 }
 
-export function WatchlistGrid({ lists, onToggle, onEdit, onNew }: {
+export function WatchlistGrid({ lists, onToggle, onEdit, onNew, onShow }: {
   lists: Watchlist[];
   onToggle: (id: string, on: boolean) => void;
   onEdit: (w: Watchlist) => void;
   onNew: () => void;
+  onShow: (id: string) => void;
 }) {
   const { t, locale } = useI18n();
+  const channels = useChannels().data?.items ?? [];
   if (lists.length === 0) {
     return (
       <div className="rounded-xl border border-line bg-surface shadow-card">
@@ -42,7 +44,6 @@ export function WatchlistGrid({ lists, onToggle, onEdit, onNew }: {
       </div>
     );
   }
-  const channels = useChannels().data?.items ?? [];
   const channelName = (id: string | null) => channels.find((c) => c.id === id)?.name;
   return (
     <div className="flex flex-col gap-4">
@@ -68,6 +69,7 @@ export function WatchlistGrid({ lists, onToggle, onEdit, onNew }: {
                 <span aria-hidden="true">·</span>
                 <span>{ch ? t('intel.wl.notify', { channel: ch }) : t('intel.wl.noChannel')}</span>
                 <span className="grow" />
+                {w.enabled ? <Button size="sm" variant="secondary" onClick={() => onShow(w.id)}>{t('intel.wl.findings')}</Button> : null}
                 <Button size="sm" variant="ghost" onClick={() => onEdit(w)}>{t('intel.wl.edit')}</Button>
               </div>
             </section>

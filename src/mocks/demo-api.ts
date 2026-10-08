@@ -95,6 +95,9 @@ export function mockDemoRead(path: string, query: Query = {}): unknown {
   if (path === '/alerts/log') return { items: alertLog() };
   if (path === '/intel/watchlists') return { items: watchlists() };
   if (path === '/intel/iocs') return iocs();
+  if (path === '/intel/findings') return { items: [], total: 0 };
+  if (path === '/intel/new-kev') return { items: [] };
+  if (/^\/intel\/iocs\/[^/]+\/assets$/.test(path)) return { items: [] };
   if (path === '/reports/runs') return { items: runs() };
   if (path === '/reports/schedules') return { items: schedules() };
   return undefined;
