@@ -3,7 +3,6 @@
 import type { ReactNode } from 'react';
 import { EpssMeter, MonoText } from '@/components/ui';
 import { useI18n, type MessageKey, type TFunction } from '@/i18n';
-import { parseCvss3 } from '@/lib/cvss';
 import { formatDate, formatDateTime } from '@/lib/format';
 import type { CpeMatch, CveDetail, CveReference } from '@/lib/types';
 
@@ -69,31 +68,6 @@ export function Section({ title, children, padded = true, span }: { title?: Reac
       {title ? <h2 className={padded ? 'text-lg font-semibold' : 'text-lg font-semibold flex items-center gap-2 px-5 py-4'}>{title}</h2> : null}
       {children}
     </section>
-  );
-}
-
-export function CvssBreakdown({ cve }: { cve: CveDetail }) {
-  const { t } = useI18n();
-  const metrics = parseCvss3(cve.cvssVector);
-  if (!cve.cvssVector) return cve.cvssScore > 0 ? null : <p className="text-ink-muted">{t('cve.notScored')}</p>;
-  const color = { hi: 'var(--critical-ink)', mid: 'var(--high-ink)', ok: 'var(--ink)' } as const;
-  return (
-    <>
-      <div className="flex items-center gap-3 pt-1">
-        <span className="text-sm font-medium">{t('cve.cvss', { v: cve.cvssVersion ?? '' }).trim()}</span>
-        <MonoText copy>{cve.cvssVector}</MonoText>
-      </div>
-      {metrics.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-2">
-          {metrics.map((m) => (
-            <div key={m.metric} className="flex flex-col gap-0.5 rounded-lg bg-surface-2 px-3 py-2.5">
-              <span className="text-xs text-ink-muted">{t(m.labelKey)}</span>
-              <span className="text-[15px] font-medium" style={{ color: color[m.tone] }}>{t(m.valueKey)}</span>
-            </div>
-          ))}
-        </div>
-      ) : null}
-    </>
   );
 }
 

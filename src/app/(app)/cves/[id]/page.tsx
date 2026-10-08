@@ -5,8 +5,9 @@ import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { Suspense } from 'react';
 import { RequirePermission } from '@/components/shell/page-guard';
 import { AssetsTab, ReferencesTab, TimelineTab } from '@/components/cves/detail-tabs';
+import { VectorTab } from '@/components/cves/vector-tab';
 import {
-  buildTimeline, CvssBreakdown, CweCard, EpssCard, ProductsTable, ReferencesSummary, Section, TimelineList,
+  buildTimeline, CweCard, EpssCard, ProductsTable, ReferencesSummary, Section, TimelineList,
 } from '@/components/cves/detail-parts';
 import { Banner, Button, KevFlag, SeverityBadge, Skeleton, StateBlock, Tabs, buttonClass } from '@/components/ui';
 import { useCve } from '@/features/cves/hooks';
@@ -16,8 +17,8 @@ import { formatDate } from '@/lib/format';
 import { PERMISSIONS as P } from '@/lib/permissions';
 import { SEVERITY_BY_LEVEL } from '@/lib/severity';
 
-type TabId = 'overview' | 'assets' | 'refs' | 'timeline';
-const TAB_IDS: TabId[] = ['overview', 'assets', 'refs', 'timeline'];
+type TabId = 'overview' | 'assets' | 'refs' | 'vector' | 'timeline';
+const TAB_IDS: TabId[] = ['overview', 'assets', 'refs', 'vector', 'timeline'];
 
 function firstSentence(text: string, max = 110): string {
   const s = text.split(/(?<=[.!?])\s/)[0] ?? text;
@@ -79,6 +80,7 @@ function CveDetailView() {
     { id: 'overview', label: t('cve.tab.overview') },
     { id: 'assets', label: t('cve.tab.assets') },
     { id: 'refs', label: t('cve.tab.refs'), count: cve.references.length },
+    { id: 'vector', label: t('cve.tab.vector') },
     { id: 'timeline', label: t('cve.tab.timeline') },
   ];
 
@@ -115,7 +117,6 @@ function CveDetailView() {
           <div className="flex flex-col gap-4 md:col-span-2 min-w-0">
             <Section title={t('cve.description')}>
               <p className="text-ink-muted max-w-[760px]">{cve.description || '—'}</p>
-              <CvssBreakdown cve={cve} />
             </Section>
             <ProductsTable cve={cve} />
             <ReferencesSummary refs={cve.references} />
@@ -132,6 +133,7 @@ function CveDetailView() {
       ) : null}
       {tab === 'assets' ? <AssetsTab cveId={cve.id} /> : null}
       {tab === 'refs' ? <ReferencesTab cve={cve} /> : null}
+      {tab === 'vector' ? <VectorTab cve={cve} /> : null}
       {tab === 'timeline' ? <TimelineTab cve={cve} /> : null}
     </div>
   );
