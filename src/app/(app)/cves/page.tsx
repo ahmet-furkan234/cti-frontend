@@ -4,23 +4,21 @@ import { useSearchParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { RequirePermission, PageHeader } from '@/components/shell/page-guard';
-import { FilterDrawer, type Published } from '@/components/cves/filter-drawer';
+import { FilterPanel } from '@/components/cves/filter-panel';
 import { ResultCard } from '@/components/cves/result-card';
-import { Button, SearchInput, Select, Skeleton, StateBlock, Tag, cx } from '@/components/ui';
+import { Button, SearchInput, Select, Skeleton, StateBlock } from '@/components/ui';
 import { useAuth } from '@/components/auth-provider';
-import { useCveSearch, useCveStats, type CveQueryParams } from '@/features/cves/hooks';
+import { useCveSearch, type CveQueryParams } from '@/features/cves/hooks';
 import { useDebounced } from '@/lib/use-debounced';
 import { useI18n, type MessageKey } from '@/i18n';
 import { api } from '@/lib/api';
 import { formatDate, formatNumber, formatTime } from '@/lib/format';
 import { PERMISSIONS as P } from '@/lib/permissions';
-import { SEVERITY_BY_LEVEL, SEVERITIES, type Severity } from '@/lib/severity';
+import { activeFilterCount, cvssFromSeverities, dateWindow, knownSeverities, noCveFilters, type CveFilters, type DatePreset } from '@/lib/cve-filters';
+import { SEVERITY_BY_LEVEL } from '@/lib/severity';
 import type { CveListItem, SyncState } from '@/lib/types';
 
-const PUBLISHED_DAYS: Record<Exclude<Published, 'any'>, number> = { '7d': 7, '30d': 30, '12m': 365 };
 const SORTS: CveQueryParams['sort'][] = ['published', 'modified', 'cvss', 'epss'];
-const QUICK_SEVERITIES: Severity[] = ['critical', 'high', 'medium', 'low'];
-const SEV_DOT: Record<Severity, string> = { critical: 'bg-critical', high: 'bg-high', medium: 'bg-medium', low: 'bg-low', none: 'bg-neutral' };
 
 function csvCell(v: string | number | boolean): string {
   const s = String(v);
@@ -38,76 +36,61 @@ function exportCsv(rows: CveListItem[]) {
   URL.revokeObjectURL(a.href);
 }
 
-function Chip({ on, onClick, children }: { on: boolean; onClick: () => void; children: React.ReactNode }) {
-  return (
-    <button
-      type="button"
-      aria-pressed={on}
-      onClick={onClick}
-      className={cx('inline-flex h-10 shrink-0 items-center gap-2 rounded-full border px-4 text-[15px] font-medium transition-colors', on ? 'border-transparent bg-accent text-on-accent' : 'border-line-strong bg-surface text-ink-muted hover:text-ink')}
-    >
-      {children}
-    </button>
-  );
-}
-
 function Explorer() {
   const { t, locale } = useI18n();
   const { can } = useAuth();
   const urlParams = useSearchParams();
   const initialQ = urlParams.get('q') ?? '';
+  const canAssets = can(P.ASSET_READ);
   // Deep links (e.g. from the dashboard): ?kev=1 &severity=critical,high &published=7d &vendor=fortinet
-  const linkSeverities = (urlParams.get('severity') ?? '').split(',').filter((x): x is Severity => (SEVERITIES as string[]).includes(x));
-  const linkPublished = (['7d', '30d', '12m'] as const).find((p) => p === urlParams.get('published')) ?? 'any';
-  const linkKey = `${urlParams.get('kev')}|${linkSeverities.join(',')}|${linkPublished}|${urlParams.get('vendor') ?? ''}`;
+  const fromLink = (): CveFilters => ({
+    ...noCveFilters(),
+    cvss: cvssFromSeverities(knownSeverities((urlParams.get('severity') ?? '').split(','))),
+    kev: urlParams.get('kev') === '1',
+    date: { preset: (['7d', '30d', '90d', '12m'] as DatePreset[]).find((p) => p === urlParams.get('published')) ?? 'any', from: '', to: '' },
+    vendorProduct: urlParams.get('vendor') ?? '',
+    mine: canAssets && urlParams.get('assets') === 'mine',
+  });
+  const linkKey = `${urlParams.get('kev')}|${urlParams.get('severity')}|${urlParams.get('published')}|${urlParams.get('vendor') ?? ''}|${urlParams.get('assets')}`;
 
   const [q, setQ] = useState(initialQ);
-  const [severities, setSeverities] = useState<Severity[]>(linkSeverities);
-  const [cvss, setCvss] = useState<[number, number]>([0, 10]);
-  const [kev, setKev] = useState(urlParams.get('kev') === '1');
-  const [epss, setEpss] = useState('');
-  const [published, setPublished] = useState<Published>(linkPublished);
-  const [vendorProduct, setVendorProduct] = useState(urlParams.get('vendor') ?? '');
+  const [filters, setFilters] = useState<CveFilters>(fromLink);
   const [sort, setSort] = useState<CveQueryParams['sort']>('published');
   const [order, setOrder] = useState<'asc' | 'desc'>('desc');
-  const [drawer, setDrawer] = useState(false);
 
   // The header search (?q=) and dashboard links can change while this page stays mounted.
   useEffect(() => setQ(initialQ), [initialQ]);
   useEffect(() => {
-    setSeverities(linkSeverities);
-    setKev(urlParams.get('kev') === '1');
-    setPublished(linkPublished);
-    setVendorProduct(urlParams.get('vendor') ?? '');
+    setFilters(fromLink());
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [linkKey]);
 
   const dq = useDebounced(q.trim());
-  const dvp = useDebounced(vendorProduct.trim());
+  const dvp = useDebounced(filters.vendorProduct.trim());
   const [vendor, product] = dvp.includes(':') ? [dvp.split(':')[0]!, dvp.split(':').slice(1).join(':')] : [dvp, ''];
-  const epssValue = epss.trim() === '' ? undefined : Number(epss.replace(',', '.')) / 100;
-  const epssMin = epssValue !== undefined && Number.isFinite(epssValue) ? Math.min(1, Math.max(0, epssValue)) : undefined;
-  const publishedFrom = useMemo(
-    () => (published === 'any' ? undefined : new Date(Date.now() - PUBLISHED_DAYS[published] * 86_400_000).toISOString()),
-    [published],
-  );
+  // A preset's "now" is taken when it is picked, so the query key stays stable between renders.
+  const window = useMemo(() => dateWindow(filters.date), [filters.date]);
+  const [cvssMin, cvssMax] = filters.cvss;
 
   const params: CveQueryParams = {
     sort,
     order,
+    assetCounts: canAssets,
     ...(dq ? { q: dq } : {}),
-    ...(severities.length ? { severity: severities } : {}),
-    ...(cvss[0] > 0 ? { cvssMin: cvss[0] } : {}),
-    ...(cvss[1] < 10 ? { cvssMax: cvss[1] } : {}),
-    ...(kev ? { kev: true } : {}),
-    ...(epssMin !== undefined && epssMin > 0 ? { epssMin } : {}),
-    ...(publishedFrom ? { publishedFrom } : {}),
+    ...(cvssMin > 0 ? { cvssMin } : {}),
+    ...(cvssMax < 10 ? { cvssMax } : {}),
+    ...(filters.kev ? { kev: true } : {}),
+    ...(filters.epss > 0 ? { epssMin: filters.epss / 100 } : {}),
+    ...(window.from ? { publishedFrom: window.from } : {}),
+    ...(window.to ? { publishedTo: window.to } : {}),
     ...(vendor ? { vendor } : {}),
     ...(vendor && product ? { product } : {}),
+    ...(canAssets && filters.mine ? { assets: 'affecting' as const } : {}),
+    ...(canAssets && filters.mine && filters.exposed ? { assetExposed: true } : {}),
+    ...(canAssets && filters.mine && filters.env ? { assetEnv: filters.env } : {}),
   };
 
   const query = useCveSearch(params);
-  const stats = useCveStats(can(P.DASHBOARD_VIEW));
   const sync = useQuery({ queryKey: ['sync'], queryFn: () => api<SyncState[]>('/sync'), enabled: can(P.SYNC_VIEW) });
   const nvdUpdated = sync.data?.find((s) => s.source === 'nvd')?.lastSuccessAt;
 
@@ -130,19 +113,9 @@ function Explorer() {
     return () => io.disconnect();
   }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
-  const sevCount = (s: Severity) => stats.data?.severityDistribution.find((d) => SEVERITY_BY_LEVEL[d.severity] === s)?.count;
-  const advancedCount = (cvss[0] > 0 || cvss[1] < 10 ? 1 : 0) + ((epssMin ?? 0) > 0 ? 1 : 0) + (published !== 'any' ? 1 : 0) + (dvp ? 1 : 0);
-  const filtersActive = severities.length > 0 || kev || advancedCount > 0;
-  const clearFilters = () => {
-    setSeverities([]);
-    setCvss([0, 10]);
-    setKev(false);
-    setEpss('');
-    setPublished('any');
-    setVendorProduct('');
-  };
+  const filtersActive = activeFilterCount(filters, window) > 0;
+  const clearFilters = () => setFilters(noCveFilters());
   const needsVendor = !!product && !vendor;
-  const toggleSeverity = (s: Severity) => setSeverities((cur) => (cur.includes(s) ? cur.filter((x) => x !== s) : [...cur, s]));
 
   return (
     <div className="mx-auto flex w-full max-w-[1100px] min-w-0 grow flex-col gap-5 p-4 md:p-8">
@@ -162,35 +135,7 @@ function Explorer() {
 
       <SearchInput size="lg" value={q} onChange={(e) => setQ(e.target.value)} placeholder={t('cves.searchPlaceholder')} />
 
-      <div className="flex flex-col gap-3">
-        <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 md:mx-0 md:flex-wrap md:px-0" role="group" aria-label={t('cves.filters')}>
-          {QUICK_SEVERITIES.map((s) => (
-            <Chip key={s} on={severities.includes(s)} onClick={() => toggleSeverity(s)}>
-              <span className={cx('size-2.5 rounded-full', severities.includes(s) ? 'bg-on-accent' : SEV_DOT[s])} aria-hidden="true" />
-              {t(`sev.${s}` as MessageKey)}
-              {sevCount(s) !== undefined ? <span className="text-sm tabular-nums opacity-70">{formatNumber(sevCount(s)!, locale)}</span> : null}
-            </Chip>
-          ))}
-          <Chip on={kev} onClick={() => setKev((v) => !v)}>{t('cves.quick.kev')}</Chip>
-          <Chip on={published === '7d'} onClick={() => setPublished((p) => (p === '7d' ? 'any' : '7d'))}>{t('cves.quick.week')}</Chip>
-          <button
-            type="button"
-            onClick={() => setDrawer(true)}
-            className="inline-flex h-10 shrink-0 items-center gap-2 rounded-full border border-dashed border-line-strong px-4 text-[15px] font-medium text-ink-muted hover:text-ink"
-          >
-            {advancedCount > 0 ? t('cves.moreN', { n: advancedCount }) : t('cves.more')}
-          </button>
-        </div>
-
-        {advancedCount > 0 ? (
-          <div className="flex flex-wrap items-center gap-2">
-            {cvss[0] > 0 || cvss[1] < 10 ? <Tag tone="accent" onRemove={() => setCvss([0, 10])}>{t('cves.tag.cvss', { min: cvss[0].toFixed(1), max: cvss[1].toFixed(1) })}</Tag> : null}
-            {(epssMin ?? 0) > 0 ? <Tag tone="accent" onRemove={() => setEpss('')}>{t('cves.tag.epss', { v: epss })}</Tag> : null}
-            {published !== 'any' && published !== '7d' ? <Tag tone="accent" onRemove={() => setPublished('any')}>{t('cves.tag.published', { v: t(`cves.f.pub.${published}` as MessageKey) })}</Tag> : null}
-            {dvp ? <Tag tone="accent" onRemove={() => setVendorProduct('')}>{dvp}</Tag> : null}
-          </div>
-        ) : null}
-      </div>
+      <FilterPanel filters={filters} onChange={setFilters} canAssets={canAssets} vendorError={needsVendor} windowActive={!!(window.from || window.to)} />
 
       <section className="min-w-0 overflow-hidden rounded-xl border border-line bg-surface shadow-card" aria-busy={query.isPending}>
         <div className="flex flex-wrap items-center gap-x-3 gap-y-2 border-b border-line px-4 py-3 md:px-5">
@@ -250,18 +195,6 @@ function Explorer() {
         <div ref={sentinel} className="h-px" />
       </section>
 
-      {drawer ? (
-        <FilterDrawer
-          cvss={cvss} onCvss={setCvss}
-          epss={epss} onEpss={setEpss}
-          published={published} onPublished={setPublished}
-          vendorProduct={vendorProduct} onVendorProduct={setVendorProduct}
-          vendorError={needsVendor}
-          canClear={advancedCount > 0}
-          onClear={() => { setCvss([0, 10]); setEpss(''); setPublished('any'); setVendorProduct(''); }}
-          onClose={() => setDrawer(false)}
-        />
-      ) : null}
     </div>
   );
 }

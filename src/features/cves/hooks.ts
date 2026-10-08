@@ -10,8 +10,15 @@ export interface CveQueryParams {
   kev?: boolean;
   epssMin?: number;
   publishedFrom?: string;
+  publishedTo?: string;
   vendor?: string;
   product?: string;
+  /** 'affecting': only CVEs that hit the company's own assets (needs asset:read) */
+  assets?: 'affecting';
+  assetExposed?: boolean;
+  assetEnv?: string;
+  /** add how many of the company's assets each CVE affects */
+  assetCounts?: boolean;
   sort: 'published' | 'modified' | 'cvss' | 'epss';
   order: 'asc' | 'desc';
 }

@@ -6,6 +6,7 @@ export const common = defineMessages({
   'sev.high': { tr: 'Yüksek', en: 'High' },
   'sev.medium': { tr: 'Orta', en: 'Medium' },
   'sev.low': { tr: 'Düşük', en: 'Low' },
+  'sev.unscored': { tr: 'Puansız', en: 'Unscored' },
   'sev.none': { tr: 'Yok', en: 'None' },
   // SLA chip
   'sla.left': { tr: 'kaldı', en: 'left' },
@@ -18,6 +19,8 @@ export const common = defineMessages({
   'kev.title': { tr: 'CISA Bilinen İstismar Edilen Zafiyet', en: 'CISA Known Exploited Vulnerability' },
   'kev.addedOn': { tr: 'eklenme {date}', en: 'added {date}' },
   'kev.ransomware': { tr: 'Fidye yazılımı', en: 'Ransomware' },
+  'epss.pending': { tr: 'Henüz hesaplanmadı', en: 'Not scored yet' },
+  'epss.pending.desc': { tr: 'Yeni yayınlanan kayıtlar için istismar olasılığı birkaç gün içinde hesaplanır; şimdilik düşük olduğu anlamına gelmez.', en: 'For newly published records the exploit likelihood is calculated within a few days; it does not mean the risk is low.' },
   'epss.percentile': { tr: 'yüzdelik', en: 'percentile' },
   'risk.score': { tr: 'Risk skoru', en: 'Risk score' },
   // tri-state permission toggle
@@ -44,6 +47,9 @@ export const common = defineMessages({
   'status.failing': { tr: 'Başarısız', en: 'Failing' },
   'status.running': { tr: 'Çalışıyor', en: 'Running' },
   'status.idle': { tr: 'Boşta', en: 'Idle' },
+  'status.ready': { tr: 'Hazır', en: 'Ready' },
+  'status.generating': { tr: 'Hazırlanıyor', en: 'Generating' },
+  'status.failed': { tr: 'Başarısız', en: 'Failed' },
   // generic
   'common.copy': { tr: 'Kopyala', en: 'Copy' },
   'common.copied': { tr: 'Kopyalandı', en: 'Copied' },
@@ -80,6 +86,8 @@ export const common = defineMessages({
   'common.tryAgainLater': { tr: 'Bir sorun oluştu. Biraz sonra tekrar deneyin.', en: 'Something went wrong. Please try again shortly.' },
   'common.noPermission': { tr: 'Bu sayfayı görüntüleme yetkiniz yok', en: 'You do not have permission to view this page' },
   'common.noPermissionDesc': { tr: 'Erişim için yöneticinizden gerekli izni isteyin.', en: 'Ask your administrator for the required permission.' },
+  'common.platformOnly': { tr: 'Bu alan yalnızca ana şirkette kullanılabilir', en: 'This area is available only in the main company' },
+  'common.platformOnlyDesc': { tr: 'Alt şirketler genel sistem ayarlarını ve senkronizasyonu görüntüleyemez veya değiştiremez.', en: 'Subsidiaries cannot view or change global system settings or synchronization.' },
   'common.notFound': { tr: 'Sayfa bulunamadı', en: 'Page not found' },
   'common.notFoundDesc': { tr: 'Aradığınız sayfa taşınmış veya hiç var olmamış olabilir.', en: 'The page may have moved or never existed.' },
   'common.goHome': { tr: 'Dashboard’a dön', en: 'Back to dashboard' },

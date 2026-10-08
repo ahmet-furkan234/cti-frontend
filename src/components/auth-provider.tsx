@@ -9,7 +9,8 @@ import type { LoginResponse, Me } from '@/lib/types';
 import { canSkipLogin, isLocalSession, setLocalSession } from '@/lib/local-auth';
 import { PERMISSIONS } from '@/lib/permissions';
 
-const localUser: Me = { id: 'local-preview', email: 'local@localhost', name: 'Local Preview', roles: [{ id: 'local', name: 'Local Preview' }], permissions: Object.values(PERMISSIONS), lastLoginAt: null };
+const localCompany = { id: 'local-platform', name: 'Local Preview', isPlatform: true };
+const localUser: Me = { id: 'local-preview', email: 'local@localhost', name: 'Local Preview', roles: [{ id: 'local', name: 'Local Preview' }], permissions: Object.values(PERMISSIONS), lastLoginAt: null, company: localCompany, actingCompany: localCompany };
 
 type Status = 'loading' | 'authed' | 'anon';
 
@@ -22,6 +23,8 @@ interface AuthValue {
   logout: () => Promise<void>;
   applySession: (accessToken: string, user: Me) => void;
   reloadUser: () => Promise<void>;
+  /** Whether the current screen is scoped to the main company rather than a subsidiary. */
+  isPlatformScope: boolean;
   /** Works inside another company (platform users) or back in one's own (null). Reloads the app so nothing stale stays on screen. */
   switchCompany: (companyId: string | null) => void;
 }
@@ -129,6 +132,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       logout,
       reloadUser,
       switchCompany,
+      isPlatformScope: user?.actingCompany?.isPlatform ?? user?.company?.isPlatform ?? false,
       can: (...permissions) => !!user && permissions.some((p) => user.permissions.includes(p)),
     }),
     [status, user, applySession, login, skipLogin, logout, reloadUser, switchCompany],

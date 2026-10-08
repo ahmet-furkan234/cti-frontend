@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useAuth } from '@/components/auth-provider';
 import { SoftwareCombobox } from '@/components/assets/software-combobox';
-import { PageHeader, RequirePermission } from '@/components/shell/page-guard';
+import { PageHeader, RequirePermission, RequirePlatform } from '@/components/shell/page-guard';
 import { LoadError, LoadingRows } from '@/components/shell/query-state';
 import { Banner, Button, Select, StateBlock, TextField } from '@/components/ui';
 import { useAliasMutations, useSoftwareAliases } from '@/features/assets/hooks';
@@ -97,11 +97,11 @@ function SoftwareList() {
 export default function SettingsPage() {
   const { t } = useI18n();
   return (
-    <RequirePermission any={[P.ASSET_READ]}>
+    <RequirePlatform><RequirePermission any={[P.ASSET_READ]}>
       <div className="mx-auto flex w-full max-w-[1100px] min-w-0 grow flex-col gap-5 p-4 md:p-8">
         <PageHeader title={t('settings.title')} />
         <SoftwareList />
       </div>
-    </RequirePermission>
+    </RequirePermission></RequirePlatform>
   );
 }

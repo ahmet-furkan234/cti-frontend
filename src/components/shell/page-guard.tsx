@@ -28,6 +28,22 @@ export function RequirePermission({ any, children }: { any: string[]; children: 
   return <>{children}</>;
 }
 
+/** Blocks global administration pages while the app is scoped to a subsidiary. */
+export function RequirePlatform({ children }: { children: ReactNode }) {
+  const { isPlatformScope } = useAuth();
+  const t = useT();
+  if (!isPlatformScope) {
+    return (
+      <div className="mx-auto flex w-full max-w-[1440px] min-w-0 grow flex-col gap-5 p-4 md:p-8">
+        <div className="min-w-0 rounded-xl border border-line bg-surface shadow-card">
+          <StateBlock kind="forbidden" code="403" title={t('common.platformOnly')} description={t('common.platformOnlyDesc')} action={<Link href="/" className={buttonClass()}>{t('common.goHome')}</Link>} />
+        </div>
+      </div>
+    );
+  }
+  return <>{children}</>;
+}
+
 export function PageHeader({
   title,
   subtitle,

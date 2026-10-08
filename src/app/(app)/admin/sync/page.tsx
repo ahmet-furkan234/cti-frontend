@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { errorMessage } from '@/components/admin/admin-parts';
 import { useAuth } from '@/components/auth-provider';
-import { PageHeader, RequirePermission } from '@/components/shell/page-guard';
+import { PageHeader, RequirePermission, RequirePlatform } from '@/components/shell/page-guard';
 import { Banner, Button, Skeleton, StateBlock, StatusPill } from '@/components/ui';
 import { useRunSync, useSyncStates } from '@/features/admin/hooks';
 import { useI18n, type MessageKey } from '@/i18n';
@@ -192,8 +192,6 @@ function SyncView() {
 
 export default function SyncPage() {
   return (
-    <RequirePermission any={[P.SYNC_VIEW]}>
-      <SyncView />
-    </RequirePermission>
+    <RequirePlatform><RequirePermission any={[P.SYNC_VIEW]}><SyncView /></RequirePermission></RequirePlatform>
   );
 }

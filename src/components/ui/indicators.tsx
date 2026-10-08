@@ -6,7 +6,7 @@ import { cx } from './controls';
 import { Skeleton } from './layout';
 import { TONE_BG, TONE_SOFT, TONE_STROKE, TONE_TEXT } from './tone';
 import { useT, type MessageKey } from '@/i18n';
-import { epssTone, riskTone, scorePassword, severityFromScore, type Severity } from '@/lib/severity';
+import { epssTone, hasEpss, riskTone, scorePassword, severityFromScore, type Severity } from '@/lib/severity';
 
 /* ---------- SeverityBadge ---------- */
 export function SeverityBadge({
@@ -23,6 +23,15 @@ export function SeverityBadge({
   const t = useT();
   const sev = severity ?? severityFromScore(score);
   const label = t(`sev.${sev}` as MessageKey);
+  // No score is not a severity: show it as a quiet "unscored" pill instead of a coloured "None".
+  if (sev === 'none' && !compact) {
+    return (
+      <span className={cx('inline-flex h-6 items-center gap-1.5 rounded-full border border-dashed border-line-strong bg-surface-2 px-2.5 text-sm font-medium whitespace-nowrap text-ink-muted', className)}>
+        <span className="w-2 border-t-[1.5px] border-current" aria-hidden="true" />
+        {t('sev.unscored')}
+      </span>
+    );
+  }
   return (
     <span
       className={cx(
@@ -72,10 +81,26 @@ export function formatPct(v: number): string {
   return `${p >= 10 ? p.toFixed(0) : p >= 1 ? p.toFixed(1) : p.toFixed(2)}%`;
 }
 
+/** Shown instead of a number when EPSS has not been calculated yet (see hasEpss). */
+export function EpssPending({ className }: { className?: string }) {
+  const t = useT();
+  return (
+    <span
+      className={cx('inline-flex h-6 items-center gap-1.5 rounded-full border border-dashed border-line-strong bg-surface-2 px-2.5 text-sm font-medium whitespace-nowrap text-ink-muted', className)}
+      title={t('epss.pending.desc')}
+    >
+      <Icon name="clock" size={12} />
+      {t('epss.pending')}
+    </span>
+  );
+}
+
 export function EpssMeter({ value, percentile, variant = 'bar' }: { value: number; percentile?: number; variant?: 'bar' | 'gauge' }) {
   const t = useT();
   const v = Math.max(0, Math.min(1, value || 0));
   const tone = epssTone(v);
+  const scored = hasEpss(v);
+  if (variant === 'gauge' && !scored) return <EpssPending />;
   if (variant === 'gauge') {
     const r = 44;
     const c = Math.PI * r;
@@ -94,6 +119,7 @@ export function EpssMeter({ value, percentile, variant = 'bar' }: { value: numbe
       </div>
     );
   }
+  if (!scored) return <EpssPending />;
   return (
     <span className="inline-flex items-center gap-2" title={percentile != null ? `${t('epss.percentile')} ${Math.round(percentile * 100)}` : undefined}>
       <span className="min-w-11 text-right text-sm text-ink tabular-nums">{formatPct(v)}</span>
@@ -161,6 +187,7 @@ const STATUS_TONE: Record<string, 'ok' | 'warn' | 'danger' | 'accent' | 'muted'>
   open: 'danger', in_progress: 'accent', mitigated: 'ok', accepted: 'warn', false_positive: 'muted',
   invited: 'accent', disabled: 'muted', locked: 'danger',
   healthy: 'ok', degraded: 'warn', failing: 'danger', running: 'accent', idle: 'muted',
+  ready: 'ok', generating: 'accent', failed: 'danger',
 };
 
 const STATUS_DOT = {

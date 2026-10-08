@@ -49,7 +49,7 @@ export function ReportDrawer({ template, mode: initialMode, existing, saving, on
   const toggleFormat = (f: Format) => setFormats((cur) => (cur.includes(f) ? cur.filter((x) => x !== f) : [...cur, f]));
 
   return (
-    <Drawer title={t(`reports.name.${template}` as MessageKey)} onClose={onClose}
+    <Drawer centered title={t(`reports.name.${template}` as MessageKey)} onClose={onClose}
       footer={
         <>
           <span className="grow" />

@@ -38,3 +38,12 @@ describe('severity helpers', () => {
     expect(scorePassword('Correct-Horse-9!')).toBe(4);
   });
 });
+
+describe('hasEpss', () => {
+  it('treats the stored 0 as "not scored yet"', async () => {
+    const { hasEpss } = await import('./severity');
+    expect(hasEpss(0)).toBe(false);
+    expect(hasEpss(null)).toBe(false);
+    expect(hasEpss(0.0004)).toBe(true);
+  });
+});

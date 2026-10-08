@@ -57,6 +57,8 @@ export interface CveListItem {
   isKev: boolean;
   epss: number;
   affected: string[];
+  /** unresolved matches on the company's assets; present when the list asked for it */
+  affectedAssets?: number;
 }
 
 export interface CveSearchResponse {

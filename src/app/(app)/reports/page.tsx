@@ -5,7 +5,7 @@ import { useAuth } from '@/components/auth-provider';
 import { PageHeader, RequirePermission } from '@/components/shell/page-guard';
 import { LoadError, LoadingRows } from '@/components/shell/query-state';
 import { ReportDrawer, type Mode, type ReportRequest } from '@/components/reports/report-drawer';
-import { Banner, Button, Icon, StateBlock, Tabs, Tag, Toggle, cx } from '@/components/ui';
+import { Banner, Button, Icon, StateBlock, StatusPill, Tabs, Tag, Toggle, cx } from '@/components/ui';
 import { useI18n, type MessageKey, type TFunction } from '@/i18n';
 import { downloadReport, useReportMutations, useReportRuns, useReportSchedules } from '@/features/reports/hooks';
 import { toRun, toSchedule } from '@/features/reports/map';
@@ -53,7 +53,7 @@ function TemplateCard({ id, canManage, onCreate, onSchedule }: { id: TemplateId;
 function FormatLinks({ formats, onDownload }: { formats: Format[]; onDownload: (f: Format) => void }) {
   const { t } = useI18n();
   return (
-    <span className="flex gap-2">
+    <span className="flex justify-end gap-2">
       {formats.map((f) => (
         <button key={f} type="button" onClick={() => onDownload(f)} className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-line-strong bg-surface px-3 text-sm font-medium hover:bg-surface-2" aria-label={t('reports.download', { format: f.toUpperCase() })}>
           <Icon name="down" size={13} />
@@ -69,24 +69,25 @@ function RunList({ runs, canManage, onDownload, onRetry }: { runs: ReportRun[]; 
   const ageMin = useAgeMinutes();
   if (runs.length === 0) return <div className="rounded-xl border border-line bg-surface shadow-card"><StateBlock kind="empty" title={t('reports.run.empty')} description={t('reports.run.emptyDesc')} /></div>;
   return (
-    <ul className="m-0 list-none overflow-hidden rounded-xl border border-line bg-surface p-0 shadow-card">
-      {runs.map((r) => (
-        <li key={r.id} className="flex flex-wrap items-center gap-x-4 gap-y-2 border-b border-line px-5 py-4 last:border-b-0">
-          <span className={cx('inline-flex size-10 shrink-0 items-center justify-center rounded-full', r.status === 'failed' ? 'bg-critical-soft text-critical-ink' : r.status === 'generating' ? 'bg-surface-2 text-ink-muted' : 'bg-low-soft text-low-ink')}>
-            <Icon name={r.status === 'failed' ? 'alert' : r.status === 'generating' ? 'loader' : 'report'} size={18} spin={r.status === 'generating'} />
-          </span>
-          <span className="flex min-w-0 grow flex-col">
-            <span className="truncate font-medium">{reportName(t, r.template, r.scope)}</span>
-            <span className="text-sm text-ink-muted">
-              {r.status === 'generating' ? t('reports.run.generating') : `${ageMin(r.min)}${r.status === 'ready' ? ` · ${r.size}` : ''}${r.manual ? ` · ${t('reports.run.manual')}` : ''}`}
-              {r.status === 'failed' ? <span className="text-critical-ink"> · {t('reports.run.failed')}</span> : null}
-            </span>
-          </span>
-          {r.status === 'ready' ? <FormatLinks formats={r.formats} onDownload={() => onDownload(r.id)} /> : null}
-          {r.status === 'failed' && canManage ? <Button size="sm" icon="refresh" onClick={() => onRetry(r.id)}>{t('reports.retry')}</Button> : null}
-        </li>
-      ))}
-    </ul>
+    <div className="overflow-x-auto rounded-xl border border-line bg-surface shadow-card">
+      <table className="w-full min-w-[760px] table-fixed border-collapse text-left">
+        <colgroup><col /><col className="w-[150px]" /><col className="w-[150px]" /><col className="w-[125px]" /><col className="w-[190px]" /></colgroup>
+        <thead className="bg-surface-2 text-sm font-medium text-ink-muted">
+          <tr><th className="px-5 py-3">{t('reports.col.report')}</th><th className="px-4 py-3">{t('reports.col.status')}</th><th className="px-4 py-3">{t('reports.col.created')}</th><th className="px-4 py-3">{t('reports.col.source')}</th><th className="px-5 py-3 text-right">{t('reports.col.output')}</th></tr>
+        </thead>
+        <tbody>
+          {runs.map((r) => (
+            <tr key={r.id} className="border-t border-line align-middle hover:bg-surface-2/60">
+              <td className="px-5 py-3.5"><span className="flex min-w-0 items-center gap-3"><span className={cx('inline-flex size-9 shrink-0 items-center justify-center rounded-lg', r.status === 'failed' ? 'bg-critical-soft text-critical-ink' : r.status === 'generating' ? 'bg-surface-2 text-ink-muted' : 'bg-low-soft text-low-ink')}><Icon name={r.status === 'failed' ? 'alert' : r.status === 'generating' ? 'loader' : 'report'} size={17} spin={r.status === 'generating'} /></span><span className="min-w-0"><span className="block truncate font-medium">{reportName(t, r.template, r.scope)}</span><span className="block truncate text-sm text-ink-muted">{r.status === 'ready' ? r.size : r.status === 'failed' ? t('reports.run.failed') : t('reports.run.generating')}</span></span></span></td>
+              <td className="px-4 py-3.5"><StatusPill status={r.status} /></td>
+              <td className="px-4 py-3.5 text-sm text-ink-muted tabular-nums">{ageMin(r.min)}</td>
+              <td className="px-4 py-3.5 text-sm text-ink-muted">{r.manual ? t('reports.run.manualShort') : t('reports.run.scheduledShort')}</td>
+              <td className="px-5 py-3.5 text-right">{r.status === 'ready' ? <FormatLinks formats={r.formats} onDownload={() => onDownload(r.id)} /> : r.status === 'failed' && canManage ? <Button size="sm" icon="refresh" onClick={() => onRetry(r.id)}>{t('reports.retry')}</Button> : <span className="text-ink-subtle">—</span>}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
   );
 }
 
@@ -94,33 +95,25 @@ function ScheduleList({ items, canManage, onToggle, onEdit, onDelete }: { items:
   const { t, locale } = useI18n();
   if (items.length === 0) return <div className="rounded-xl border border-line bg-surface shadow-card"><StateBlock kind="empty" title={t('reports.sched.empty')} description={t('reports.sched.emptyDesc')} /></div>;
   return (
-    <ul className="m-0 flex list-none flex-col gap-3 p-0">
-      {items.map((s) => {
+    <div className="overflow-x-auto rounded-xl border border-line bg-surface shadow-card">
+      <table className="w-full min-w-[980px] table-fixed border-collapse text-left">
+        <colgroup><col className="w-[88px]" /><col /><col className="w-[180px]" /><col className="w-[240px]" /><col className="w-[215px]" /><col className="w-[130px]" /></colgroup>
+        <thead className="bg-surface-2 text-sm font-medium text-ink-muted"><tr><th className="px-4 py-3 text-center">{t('reports.col.active')}</th><th className="px-4 py-3">{t('reports.col.report')}</th><th className="px-4 py-3">{t('reports.col.frequency')}</th><th className="px-4 py-3">{t('reports.col.recipients')}</th><th className="px-4 py-3">{t('reports.col.next')}</th><th className="px-4 py-3 text-right">{t('reports.col.actions')}</th></tr></thead>
+        <tbody>{items.map((s) => {
         const name = reportName(t, s.template, s.scope);
         const when = nextRun(s.freq).toLocaleString(locale, { weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' });
         return (
-          <li key={s.id} className={cx('flex items-start gap-4 rounded-xl border border-line p-5 shadow-card', s.enabled ? 'bg-surface' : 'bg-surface-2/60')}>
-            <Toggle checked={s.enabled} disabled={!canManage} onChange={(v) => onToggle(s.id, v)} className="mt-0.5" aria-label={t('reports.sched.toggle', { name })} />
-            <div className={cx('flex min-w-0 grow flex-col gap-1', !s.enabled && 'opacity-70')}>
-              <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-                <h3 className="text-base font-semibold">{name}</h3>
-                {!s.enabled ? <Tag>{t('reports.sched.paused')}</Tag> : null}
-                <span className="text-sm text-ink-muted">{s.formats.map((f) => f.toUpperCase()).join(' + ')}</span>
-              </div>
-              <p className="m-0 text-[15px]">{t(`reports.freq.${s.freq}` as MessageKey)}</p>
-              <p className="m-0 truncate text-sm text-ink-muted">{t('reports.sched.to', { list: s.recipients.join(', ') })}</p>
-              {s.enabled ? <p className="m-0 text-sm text-ink-subtle">{t('reports.sched.next', { when })}</p> : null}
-            </div>
-            {canManage ? (
-              <div className="flex shrink-0 gap-2">
-                <Button size="sm" onClick={() => onEdit(s)}>{t('reports.sched.edit')}</Button>
-                <Button size="sm" variant="ghost" icon="trash" aria-label={t('reports.sched.delete')} title={t('reports.sched.delete')} onClick={() => onDelete(s)} />
-              </div>
-            ) : null}
-          </li>
+          <tr key={s.id} className={cx('border-t border-line align-middle hover:bg-surface-2/60', !s.enabled && 'bg-surface-2/40 text-ink-muted')}>
+            <td className="px-4 py-3.5 text-center"><Toggle checked={s.enabled} disabled={!canManage} onChange={(v) => onToggle(s.id, v)} aria-label={t('reports.sched.toggle', { name })} /></td>
+            <td className="px-4 py-3.5"><span className="block truncate font-medium">{name}</span><span className="mt-0.5 block text-sm text-ink-muted">{s.formats.map((f) => f.toUpperCase()).join(' + ')}{!s.enabled ? ` · ${t('reports.sched.paused')}` : ''}</span></td>
+            <td className="px-4 py-3.5 text-sm">{t(`reports.freq.${s.freq}` as MessageKey)}</td>
+            <td className="px-4 py-3.5"><span className="block truncate text-sm text-ink-muted" title={s.recipients.join(', ')}>{s.recipients.join(', ')}</span></td>
+            <td className="px-4 py-3.5 text-sm text-ink-muted tabular-nums">{s.enabled ? when : '—'}</td>
+            <td className="px-4 py-3.5"><div className="flex justify-end gap-1">{canManage ? <><Button size="sm" onClick={() => onEdit(s)}>{t('reports.sched.edit')}</Button><Button size="sm" variant="ghost" icon="trash" aria-label={t('reports.sched.delete')} title={t('reports.sched.delete')} onClick={() => onDelete(s)} /></> : <span className="text-ink-subtle">—</span>}</div></td>
+          </tr>
         );
-      })}
-    </ul>
+      })}</tbody></table>
+    </div>
   );
 }
 

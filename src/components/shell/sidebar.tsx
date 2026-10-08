@@ -16,6 +16,8 @@ interface NavEntry {
   label: MessageKey;
   /** any-of; omitted = visible to every signed-in user */
   needs?: string[];
+  /** Global administration that must disappear while working inside a subsidiary. */
+  platformOnly?: boolean;
 }
 
 const MAIN: NavEntry[] = [
@@ -32,8 +34,8 @@ const ADMIN: NavEntry[] = [
   { id: 'companies', href: '/admin/companies', icon: 'assets', label: 'nav.companies', needs: [P.COMPANY_READ, P.COMPANY_MANAGE] },
   { id: 'users', href: '/admin/users', icon: 'users', label: 'nav.users', needs: [P.USER_READ, P.ROLE_READ] },
   { id: 'audit', href: '/admin/audit', icon: 'audit', label: 'nav.audit', needs: [P.AUDIT_READ] },
-  { id: 'sync', href: '/admin/sync', icon: 'sync', label: 'nav.sync', needs: [P.SYNC_VIEW] },
-  { id: 'settings', href: '/admin/settings', icon: 'settings', label: 'nav.settings' },
+  { id: 'sync', href: '/admin/sync', icon: 'sync', label: 'nav.sync', needs: [P.SYNC_VIEW], platformOnly: true },
+  { id: 'settings', href: '/admin/settings', icon: 'settings', label: 'nav.settings', platformOnly: true },
 ];
 
 function isActive(pathname: string, href: string): boolean {
@@ -45,11 +47,11 @@ function isActive(pathname: string, href: string): boolean {
 export function Sidebar({ open, onNavigate }: { open: boolean; onNavigate: () => void }) {
   const t = useT();
   const pathname = usePathname();
-  const { user, can, logout } = useAuth();
+  const { user, can, logout, isPlatformScope } = useAuth();
 
   const render = (items: NavEntry[]) =>
     items
-      .filter((it) => !it.needs || can(...it.needs))
+      .filter((it) => (!it.platformOnly || isPlatformScope) && (!it.needs || can(...it.needs)))
       .map((it) => {
         // Users & roles: land on whichever tab the user may see.
         const href = it.id === 'users' && !can(P.USER_READ) ? '/admin/roles' : it.href;

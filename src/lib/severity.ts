@@ -13,6 +13,9 @@ export function severityFromScore(score: number | null | undefined): Severity {
   return 'low';
 }
 
+/** The EPSS table has no empty value: a record that was never scored is stored as 0, and a real EPSS score is never exactly 0. */
+export const hasEpss = (v: number | null | undefined): boolean => (v ?? 0) > 0;
+
 export function epssTone(v: number): Severity {
   return v >= 0.5 ? 'critical' : v >= 0.1 ? 'high' : v >= 0.01 ? 'medium' : 'low';
 }

@@ -2,6 +2,7 @@
 
 import type { ReactNode } from 'react';
 import { EpssMeter, MonoText } from '@/components/ui';
+import { hasEpss } from '@/lib/severity';
 import { useI18n, type MessageKey, type TFunction } from '@/i18n';
 import { formatDate, formatDateTime } from '@/lib/format';
 import type { CpeMatch, CveDetail, CveReference } from '@/lib/types';
@@ -73,6 +74,17 @@ export function Section({ title, children, padded = true, span }: { title?: Reac
 
 export function EpssCard({ cve }: { cve: CveDetail }) {
   const { t } = useI18n();
+  if (!hasEpss(cve.epss)) {
+    return (
+      <section className="min-w-0 rounded-xl border border-line bg-surface shadow-card p-5 flex flex-col items-start gap-2.5">
+        <div className="flex w-full items-center gap-3">
+          <h2 className="grow text-base font-semibold">{t('cve.epss.title')}</h2>
+          <EpssMeter variant="gauge" value={0} />
+        </div>
+        <span className="text-sm text-ink-muted">{t('epss.pending.desc')}</span>
+      </section>
+    );
+  }
   return (
     <section className="min-w-0 rounded-xl border border-line bg-surface shadow-card p-5 flex items-center gap-4">
       <EpssMeter variant="gauge" value={cve.epss} percentile={cve.epssPercentile} />
