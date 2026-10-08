@@ -49,7 +49,17 @@ export function ReportDrawer({ template, mode: initialMode, existing, saving, on
   const toggleFormat = (f: Format) => setFormats((cur) => (cur.includes(f) ? cur.filter((x) => x !== f) : [...cur, f]));
 
   return (
-    <Drawer title={t(`reports.name.${template}` as MessageKey)} onClose={onClose}>
+    <Drawer title={t(`reports.name.${template}` as MessageKey)} onClose={onClose}
+      footer={
+        <>
+          <span className="grow" />
+          <Button variant="ghost" onClick={onClose}>{t('common.cancel')}</Button>
+          <Button variant="primary" icon="check" loading={saving} onClick={submit}>
+            {existing ? t('reports.d.submit.save') : t(scheduling ? 'reports.d.submit.schedule' : 'reports.d.submit.now')}
+          </Button>
+        </>
+      }
+    >
       <p className="text-[15px] text-ink-muted">{t(`reports.desc.${template}` as MessageKey)}</p>
       <div className="flex flex-col gap-6">
         {!existing ? (
@@ -96,13 +106,6 @@ export function ReportDrawer({ template, mode: initialMode, existing, saving, on
           onChange={(e) => setRecipients(e.target.value)}
           inputMode="email"
         />
-      </div>
-      <div className="sticky bottom-0 -mx-6 -mb-6 mt-auto flex items-center gap-2 border-t border-line bg-surface px-6 py-4">
-        <span className="grow" />
-        <Button variant="ghost" onClick={onClose}>{t('common.cancel')}</Button>
-        <Button variant="primary" icon="check" loading={saving} onClick={submit}>
-          {existing ? t('reports.d.submit.save') : t(scheduling ? 'reports.d.submit.schedule' : 'reports.d.submit.now')}
-        </Button>
       </div>
     </Drawer>
   );

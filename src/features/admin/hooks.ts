@@ -54,6 +54,18 @@ export function useInviteUser() {
   });
 }
 
+export function useCreateUser() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (body: { name: string; email: string; password: string; roleIds: string[]; overrides: PermissionOverride[] }) =>
+      api<UserDetail>('/users', { method: 'POST', body }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['users'] });
+      void qc.invalidateQueries({ queryKey: ['roles'] });
+    },
+  });
+}
+
 export function useRoleMutations() {
   const qc = useQueryClient();
   const refresh = () => {

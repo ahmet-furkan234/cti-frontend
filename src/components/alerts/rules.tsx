@@ -161,7 +161,16 @@ export function RuleDrawer({
   };
 
   return (
-    <Drawer wide title={t(isNew ? 'alerts.new.title' : 'alerts.edit.title')} onClose={onClose}>
+    <Drawer wide title={t(isNew ? 'alerts.new.title' : 'alerts.edit.title')} onClose={onClose}
+      footer={
+        <>
+          {onDelete ? <Button variant="danger" icon="trash" onClick={onDelete}>{t('alerts.delete')}</Button> : null}
+          <span className="grow" />
+          <Button variant="ghost" loading={testing} disabled={d.channelIds.length === 0} onClick={sendTest}>{t('alerts.testSend')}</Button>
+          <Button variant="primary" icon="check" loading={saving} onClick={save}>{t('alerts.save')}</Button>
+        </>
+      }
+    >
       <div className="flex flex-col gap-7">
         <TextField
           label={t('alerts.f.name')}
@@ -263,13 +272,6 @@ export function RuleDrawer({
         </Step>
 
         {tested ? <Banner tone={tested.bad ? 'warning' : 'success'}>{t('alerts.testResult', { ok: tested.ok, bad: tested.bad })}</Banner> : null}
-      </div>
-
-      <div className="sticky bottom-0 -mx-6 -mb-6 mt-auto flex flex-wrap items-center gap-2 border-t border-line bg-surface px-6 py-4">
-        {onDelete ? <Button variant="danger" icon="trash" onClick={onDelete}>{t('alerts.delete')}</Button> : null}
-        <span className="grow" />
-        <Button variant="ghost" loading={testing} disabled={d.channelIds.length === 0} onClick={sendTest}>{t('alerts.testSend')}</Button>
-        <Button variant="primary" icon="check" loading={saving} onClick={save}>{t('alerts.save')}</Button>
       </div>
     </Drawer>
   );

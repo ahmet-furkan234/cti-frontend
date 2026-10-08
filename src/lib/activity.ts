@@ -9,7 +9,7 @@ const SECURITY = new Set(['auth.login_failed', 'auth.login_blocked', 'auth.refre
 /** The subset of security events that signal something went wrong rather than an admin acting. */
 const ALERTING = new Set(['auth.login_failed', 'auth.login_blocked', 'auth.refresh_reuse_detected']);
 const ACCOUNT = new Set(['auth.login', 'auth.registered', 'auth.password_changed', 'auth.password_reset']);
-const ACCESS = new Set(['user.invited', 'user.updated', 'user.permissions_changed', 'role.created', 'role.updated', 'role.deleted']);
+const ACCESS = new Set(['user.invited', 'user.created', 'user.updated', 'user.permissions_changed', 'role.created', 'role.updated', 'role.deleted']);
 
 export function categoryOf(action: string): ActivityCategory {
   if (SECURITY.has(action)) return 'security';
@@ -29,6 +29,7 @@ const ICONS: Record<string, IconName> = {
   'auth.password_reset': 'key',
   'auth.refresh_reuse_detected': 'alert',
   'user.invited': 'plus',
+  'user.created': 'plus',
   'user.updated': 'edit',
   'user.deleted': 'trash',
   'user.permissions_changed': 'shield',

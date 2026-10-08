@@ -98,7 +98,16 @@ export function WatchlistDrawer({ initial, saving, onSave, onDelete, onClose }: 
   };
 
   return (
-    <Drawer wide title={t(initial.id ? 'intel.wl.editTitle' : 'intel.wl.new')} onClose={onClose}>
+    <Drawer wide title={t(initial.id ? 'intel.wl.editTitle' : 'intel.wl.new')} onClose={onClose}
+      footer={
+        <>
+          {onDelete ? <Button variant="danger" icon="trash" onClick={onDelete}>{t('intel.wl.delete')}</Button> : null}
+          <span className="grow" />
+          <Button variant="ghost" onClick={onClose}>{t('common.cancel')}</Button>
+          <Button variant="primary" icon="check" loading={saving} onClick={save}>{t('intel.wl.save')}</Button>
+        </>
+      }
+    >
       <div className="flex flex-col gap-7">
         <TextField label={t('intel.wl.f.name')} hint={t('intel.wl.f.name.hint')} error={showErrors && errors.name ? t('intel.wl.err.name') : undefined} value={d.name} onChange={(e) => set('name', e.target.value)} autoFocus={!initial.id} />
 
@@ -139,12 +148,6 @@ export function WatchlistDrawer({ initial, saving, onSave, onDelete, onClose }: 
         </section>
       </div>
 
-      <div className="sticky bottom-0 -mx-6 -mb-6 mt-auto flex items-center gap-2 border-t border-line bg-surface px-6 py-4">
-        {onDelete ? <Button variant="danger" icon="trash" onClick={onDelete}>{t('intel.wl.delete')}</Button> : null}
-        <span className="grow" />
-        <Button variant="ghost" onClick={onClose}>{t('common.cancel')}</Button>
-        <Button variant="primary" icon="check" loading={saving} onClick={save}>{t('intel.wl.save')}</Button>
-      </div>
     </Drawer>
   );
 }

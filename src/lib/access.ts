@@ -22,6 +22,7 @@ const AREA_ICON: Record<string, IconName> = {
   alert: 'bell',
   intel: 'intel',
   report: 'report',
+  company: 'shield',
 };
 export const areaIcon = (module: string): IconName => AREA_ICON[module] ?? 'settings';
 

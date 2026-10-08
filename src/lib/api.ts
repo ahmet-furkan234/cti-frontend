@@ -1,3 +1,4 @@
+import { getActingCompany, setActingCompany } from './active-company';
 import { isLocalSession } from './local-auth';
 
 /**
@@ -144,6 +145,7 @@ export async function api<T = unknown>(path: string, opts: RequestOptions = {}):
       headers: {
         ...(opts.body !== undefined ? { 'content-type': 'application/json' } : {}),
         ...(accessToken ? { authorization: `Bearer ${accessToken}` } : {}),
+        ...(getActingCompany() ? { 'x-company-id': getActingCompany()! } : {}),
       },
       body: opts.body !== undefined ? JSON.stringify(opts.body) : undefined,
       signal: opts.signal ?? null,
@@ -156,6 +158,11 @@ export async function api<T = unknown>(path: string, opts: RequestOptions = {}):
       onSessionLost?.();
       throw await parseError(res);
     }
+    res = await send();
+  }
+  // The company this browser last worked in no longer exists: fall back to the user's own and try again.
+  if (res.status === 404 && getActingCompany() && (await res.clone().json().catch(() => null))?.error === 'INVALID_COMPANY') {
+    setActingCompany(null);
     res = await send();
   }
   if (!res.ok) throw await parseError(res);

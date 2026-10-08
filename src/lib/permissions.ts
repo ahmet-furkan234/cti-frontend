@@ -24,6 +24,8 @@ export const PERMISSIONS = {
   INTEL_MANAGE: 'intel:manage',
   REPORT_READ: 'report:read',
   REPORT_MANAGE: 'report:manage',
+  COMPANY_READ: 'company:read',
+  COMPANY_MANAGE: 'company:manage',
 } as const;
 
 /** Permissions that deserve a warning when handed out. */

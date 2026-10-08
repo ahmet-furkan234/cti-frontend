@@ -8,6 +8,7 @@ export const AUDIT_ACTIONS = [
   'auth.password_reset',
   'auth.refresh_reuse_detected',
   'user.invited',
+  'user.created',
   'user.updated',
   'user.deleted',
   'user.permissions_changed',

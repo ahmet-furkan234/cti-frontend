@@ -80,9 +80,10 @@ interface TextFieldProps extends InputHTMLAttributes<HTMLInputElement> {
   hint?: string;
   error?: string;
   mono?: boolean;
+  endAdornment?: ReactNode;
 }
 
-export function TextField({ label, hint, error, mono, className, id, ...rest }: TextFieldProps) {
+export function TextField({ label, hint, error, mono, endAdornment, className, id, ...rest }: TextFieldProps) {
   const auto = useId();
   const fid = id ?? auto;
   return (
@@ -92,13 +93,16 @@ export function TextField({ label, hint, error, mono, className, id, ...rest }: 
           {label}
         </label>
       ) : null}
-      <input
-        {...rest}
-        id={fid}
-        className={cx(INPUT_CLASS, mono && 'font-mono text-sm', error && 'border-critical')}
-        aria-invalid={error ? true : undefined}
-        aria-describedby={error || hint ? `${fid}-d` : undefined}
-      />
+      <div className="relative">
+        <input
+          {...rest}
+          id={fid}
+          className={cx(INPUT_CLASS, !!endAdornment && 'pr-11', mono && 'font-mono text-sm', error && 'border-critical')}
+          aria-invalid={error ? true : undefined}
+          aria-describedby={error || hint ? `${fid}-d` : undefined}
+        />
+        {endAdornment ? <div className="absolute inset-y-0 right-1 flex items-center">{endAdornment}</div> : null}
+      </div>
       {error || hint ? (
         <div id={`${fid}-d`} className={cx('flex items-center gap-1 text-sm', error ? 'text-critical-ink' : 'text-ink-subtle')}>
           {error ? <Icon name="alert" size={14} /> : null}

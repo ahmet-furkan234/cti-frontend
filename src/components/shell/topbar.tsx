@@ -5,6 +5,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useState, type FormEvent } from 'react';
 import { Button, Icon, IconButton, SearchInput, StatusPill } from '@/components/ui';
 import { LangSwitch } from './lang-switch';
+import { CompanySwitcher } from './company-switcher';
 import { useAuth } from '@/components/auth-provider';
 import { useI18n } from '@/i18n';
 import { api } from '@/lib/api';
@@ -51,6 +52,7 @@ export function Topbar({ onToggleNav, theme, onThemeChange }: { onToggleNav: () 
         </form>
       ) : null}
       <div className="hidden grow md:block" />
+      <div className="hidden md:block"><CompanySwitcher /></div>
       {can(P.SYNC_VIEW) ? <div className="hidden lg:block"><HealthPill /></div> : null}
       <div className="hidden sm:block">
         <LangSwitch />

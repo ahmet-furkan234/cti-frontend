@@ -29,6 +29,7 @@ const MAIN: NavEntry[] = [
 ];
 
 const ADMIN: NavEntry[] = [
+  { id: 'companies', href: '/admin/companies', icon: 'assets', label: 'nav.companies', needs: [P.COMPANY_READ, P.COMPANY_MANAGE] },
   { id: 'users', href: '/admin/users', icon: 'users', label: 'nav.users', needs: [P.USER_READ, P.ROLE_READ] },
   { id: 'audit', href: '/admin/audit', icon: 'audit', label: 'nav.audit', needs: [P.AUDIT_READ] },
   { id: 'sync', href: '/admin/sync', icon: 'sync', label: 'nav.sync', needs: [P.SYNC_VIEW] },

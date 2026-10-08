@@ -96,7 +96,24 @@ function RoleDrawer({ role, areas, onClose }: { role: Role | null; areas: Access
   const err = m.create.error ?? m.update.error ?? m.remove.error;
 
   return (
-    <Drawer wide title={role ? roleLabel(t, role.name) : t('roles.editor.new')} onClose={onClose}>
+    <Drawer
+      wide
+      title={role ? roleLabel(t, role.name) : t('roles.editor.new')}
+      onClose={onClose}
+      footer={canManage ? (
+        <div className="flex w-full items-center justify-between gap-2">
+          {role && !role.isSystem ? (
+            <Button variant="danger" icon="trash" onClick={remove} loading={m.remove.isPending} disabled={role.memberCount > 0} title={role.memberCount > 0 ? t('roles.editor.affected', { n: role.memberCount }) : undefined}>
+              {t('roles.editor.delete')}
+            </Button>
+          ) : <span />}
+          <div className="flex items-center gap-2">
+            <Button variant="ghost" onClick={onClose}>{t('common.cancel')}</Button>
+            <Button variant="primary" icon="check" onClick={save} loading={m.create.isPending || m.update.isPending} disabled={!dirty || !name.trim()}>{t('common.save')}</Button>
+          </div>
+        </div>
+      ) : undefined}
+    >
       {err ? <Banner tone="error">{errorMessage(err, t('common.tryAgainLater'))}</Banner> : null}
       {role?.isSystem ? <Banner tone="info">{isSuper ? t('roles.editor.superNote') : t('roles.editor.systemNote')}</Banner> : null}
 
@@ -118,19 +135,6 @@ function RoleDrawer({ role, areas, onClose }: { role: Role | null; areas: Access
       ) : null}
       {role && role.memberCount > 0 && !role.isSystem && dirty ? <p className="text-sm text-ink-muted">{t('roles.editor.affected', { n: role.memberCount })}</p> : null}
 
-      {canManage ? (
-        <div className="sticky bottom-0 -mx-6 -mb-6 mt-auto flex items-center justify-between gap-2 border-t border-line bg-surface px-6 py-4">
-          {role && !role.isSystem ? (
-            <Button variant="danger" icon="trash" onClick={remove} loading={m.remove.isPending} disabled={role.memberCount > 0} title={role.memberCount > 0 ? t('roles.editor.affected', { n: role.memberCount }) : undefined}>
-              {t('roles.editor.delete')}
-            </Button>
-          ) : <span />}
-          <div className="flex items-center gap-2">
-            <Button variant="ghost" onClick={onClose}>{t('common.cancel')}</Button>
-            <Button variant="primary" icon="check" onClick={save} loading={m.create.isPending || m.update.isPending} disabled={!dirty || !name.trim()}>{t('common.save')}</Button>
-          </div>
-        </div>
-      ) : null}
     </Drawer>
   );
 }

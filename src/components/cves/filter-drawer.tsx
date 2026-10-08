@@ -26,7 +26,15 @@ export function FilterDrawer({
 }) {
   const { t } = useI18n();
   return (
-    <Drawer title={t('cves.filters')} onClose={onClose}>
+    <Drawer title={t('cves.filters')} onClose={onClose}
+      footer={
+        <>
+          <Button variant="ghost" disabled={!canClear} onClick={onClear}>{t('common.clearFilters')}</Button>
+          <span className="grow" />
+          <Button variant="primary" onClick={onClose}>{t('cves.drawer.done')}</Button>
+        </>
+      }
+    >
       <div className="flex flex-col gap-6">
         <div className="flex flex-col gap-3">
           <span className="text-sm font-medium">{t('cves.f.cvss')}</span>
@@ -51,11 +59,6 @@ export function FilterDrawer({
           onChange={(e) => onVendorProduct(e.target.value)}
           error={vendorError ? t('cves.f.productNeedsVendor') : undefined}
         />
-      </div>
-      <div className="sticky bottom-0 -mx-6 -mb-6 mt-auto flex items-center gap-2 border-t border-line bg-surface px-6 py-4">
-        <Button variant="ghost" disabled={!canClear} onClick={onClear}>{t('common.clearFilters')}</Button>
-        <span className="grow" />
-        <Button variant="primary" onClick={onClose}>{t('cves.drawer.done')}</Button>
       </div>
     </Drawer>
   );

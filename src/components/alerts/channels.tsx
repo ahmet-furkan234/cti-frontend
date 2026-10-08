@@ -102,7 +102,16 @@ export function ChannelDrawer({
   };
 
   return (
-    <Drawer title={channel ? channel.name : t(`alerts.ch.kind.${kind}` as MessageKey)} onClose={onClose}>
+    <Drawer title={channel ? channel.name : t(`alerts.ch.kind.${kind}` as MessageKey)} onClose={onClose}
+      footer={
+        <>
+          {onRemove ? <Button variant="danger" icon="trash" onClick={onRemove}>{t('alerts.ch.remove')}</Button> : null}
+          <span className="grow" />
+          <Button variant="ghost" onClick={onClose}>{t('common.cancel')}</Button>
+          <Button variant="primary" icon="check" onClick={save}>{t('alerts.ch.save')}</Button>
+        </>
+      }
+    >
       {channel?.problem ? <Banner tone={channel.status === 'failing' ? 'error' : 'warning'}>{channel.problem[lang]}</Banner> : null}
       <p className="text-[15px] text-ink-muted">{t(`alerts.ch.kind.${kind}.desc` as MessageKey)}</p>
       <div className="flex flex-col gap-4">
@@ -120,12 +129,6 @@ export function ChannelDrawer({
             onChange={(e) => setValues((v) => ({ ...v, [f.id]: e.target.value }))}
           />
         ))}
-      </div>
-      <div className="sticky bottom-0 -mx-6 -mb-6 mt-auto flex items-center gap-2 border-t border-line bg-surface px-6 py-4">
-        {onRemove ? <Button variant="danger" icon="trash" onClick={onRemove}>{t('alerts.ch.remove')}</Button> : null}
-        <span className="grow" />
-        <Button variant="ghost" onClick={onClose}>{t('common.cancel')}</Button>
-        <Button variant="primary" icon="check" onClick={save}>{t('alerts.ch.save')}</Button>
       </div>
     </Drawer>
   );

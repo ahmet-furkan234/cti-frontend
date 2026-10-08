@@ -80,7 +80,7 @@ const DONUT_ORDER: Severity[] = ['critical', 'high', 'medium', 'low'];
 const DONUT_COLOR: Record<Severity, string> = { critical: 'var(--critical)', high: 'var(--high)', medium: 'var(--medium)', low: 'var(--low)', none: 'var(--neutral)' };
 
 /** Severity split as a ring plus a legend whose rows open the CVE list filtered to that severity. */
-export function SeverityDonut({ data }: { data: CveStats['severityDistribution'] }) {
+export function SeverityDonut({ data, href = (s) => `/cves?severity=${s}`, totalLabel }: { data: CveStats['severityDistribution']; href?: (severity: Severity) => string; totalLabel?: string }) {
   const { t, locale } = useI18n();
   const counts = DONUT_ORDER.map((s) => ({ id: s, n: data.find((d) => SEVERITY_BY_LEVEL[d.severity] === s)?.count ?? 0 }));
   const total = counts.reduce((a, c) => a + c.n, 0);
@@ -107,13 +107,13 @@ export function SeverityDonut({ data }: { data: CveStats['severityDistribution']
         </svg>
         <div className="absolute inset-0 flex flex-col items-center justify-center">
           <span className="text-3xl font-semibold tabular-nums">{formatNumber(total, locale)}</span>
-          <span className="text-sm text-ink-muted">{t('dash.sev.total')}</span>
+          <span className="text-sm text-ink-muted">{totalLabel ?? t('dash.sev.total')}</span>
         </div>
       </div>
       <ul className="m-0 flex w-full list-none flex-col p-0">
         {counts.map((c) => (
           <li key={c.id}>
-            <Link href={`/cves?severity=${c.id}`} title={t('dash.sev.view')} className="flex items-center gap-3 rounded-lg px-2 py-2 text-ink no-underline hover:bg-surface-2 hover:text-ink">
+            <Link href={href(c.id)} title={t('dash.sev.view')} className="flex items-center gap-3 rounded-lg px-2 py-2 text-ink no-underline hover:bg-surface-2 hover:text-ink">
               <SeverityBadge severity={c.id} />
               <span className="grow" />
               <span className="font-medium tabular-nums">{formatNumber(c.n, locale)}</span>

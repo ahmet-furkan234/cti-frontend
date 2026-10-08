@@ -5,6 +5,12 @@ export interface RoleRef {
   name: string;
 }
 
+export interface CompanyRef {
+  id: string;
+  name: string;
+  isPlatform: boolean;
+}
+
 export interface Me {
   id: string;
   email: string;
@@ -12,6 +18,26 @@ export interface Me {
   roles: RoleRef[];
   permissions: string[];
   lastLoginAt: string | null;
+  /** the company the user belongs to */
+  company?: CompanyRef | null;
+  /** the company whose data is on screen; differs from `company` while a platform user works inside another one */
+  actingCompany?: CompanyRef | null;
+}
+
+export interface CompanyDto extends CompanyRef {
+  status: 'active' | 'suspended';
+  createdAt: string;
+}
+
+export interface CompanyListItem extends CompanyDto {
+  users: number;
+  assets: number;
+}
+
+export interface CreateCompanyResult {
+  company: CompanyDto;
+  /** link for the first administrator, when an e-mail was given */
+  invite: { email: string; expiresAt: string; inviteUrl: string } | null;
 }
 
 export interface LoginResponse {

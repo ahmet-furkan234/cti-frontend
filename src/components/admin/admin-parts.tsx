@@ -49,8 +49,8 @@ export function errorMessage(err: unknown, fallback: string): string {
   return err instanceof ApiError ? err.message : fallback;
 }
 
-/** Simple modal-less right drawer. */
-export function Drawer({ title, onClose, children, wide }: { title: string; onClose: () => void; children: ReactNode; wide?: boolean }) {
+/** Right drawer by default; `centered` turns it into a dialog-style modal. */
+export function Drawer({ title, onClose, children, wide, centered, footer }: { title: string; onClose: () => void; children: ReactNode; wide?: boolean; centered?: boolean; footer?: ReactNode }) {
   const t = useT();
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
@@ -58,15 +58,16 @@ export function Drawer({ title, onClose, children, wide }: { title: string; onCl
     return () => document.removeEventListener('keydown', onKey);
   }, [onClose]);
   return (
-    <div className="fixed inset-0 z-30 flex justify-end bg-black/40" onClick={onClose} role="presentation">
-      <aside className={`flex h-full max-w-full flex-col ${wide ? 'w-[720px]' : 'w-[440px]'} gap-4 overflow-y-auto bg-surface p-6 shadow-pop`} role="dialog" aria-modal="true" aria-label={title} onClick={(e) => e.stopPropagation()}>
-        <div className="flex items-center gap-2">
+    <div className={`fixed inset-0 z-30 flex bg-black/40 ${centered ? 'items-center justify-center p-4' : 'justify-end'}`} onClick={onClose} role="presentation">
+      <aside className={`flex max-w-full flex-col ${wide ? 'w-[720px]' : 'w-[440px]'} bg-surface shadow-pop ${centered ? 'max-h-[calc(100dvh-2rem)] rounded-2xl border border-line' : 'h-full'}`} role="dialog" aria-modal="true" aria-label={title} onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center gap-2 px-6 pt-6 pb-4">
           <h2 className="text-lg font-semibold grow">{title}</h2>
           <button type="button" className="inline-flex size-9 items-center justify-center rounded-lg text-ink-subtle hover:bg-surface-2 hover:text-ink" onClick={onClose} aria-label={t('common.close')}>
             <Icon name="x" size={16} />
           </button>
         </div>
-        {children}
+        <div className="flex min-h-0 grow flex-col gap-4 overflow-y-auto px-6 pb-6">{children}</div>
+        {footer ? <div className="flex shrink-0 flex-wrap items-center gap-2 border-t border-line bg-surface px-6 py-4">{footer}</div> : null}
       </aside>
     </div>
   );

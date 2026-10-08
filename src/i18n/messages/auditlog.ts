@@ -43,6 +43,7 @@ export const auditlog = defineMessages({
   'auditlog.s.auth.password_reset': { tr: '{actor} parolasını sıfırladı', en: '{actor} reset their password' },
   'auditlog.s.auth.refresh_reuse_detected': { tr: '{actor} için şüpheli bir oturum yenilemesi tespit edildi', en: 'A suspicious session refresh was detected for {actor}' },
   'auditlog.s.user.invited': { tr: '{actor}, {target} adresini davet etti', en: '{actor} invited {target}' },
+  'auditlog.s.user.created': { tr: '{actor}, {target} kullanıcısını oluşturdu', en: '{actor} created {target}' },
   'auditlog.s.user.updated': { tr: '{actor}, {target} kullanıcısını güncelledi', en: '{actor} updated {target}' },
   'auditlog.s.user.deleted': { tr: '{actor}, {target} kullanıcısını sildi', en: '{actor} deleted {target}' },
   'auditlog.s.user.permissions_changed': { tr: '{actor}, {target} kullanıcısının izinlerini değiştirdi', en: '{actor} changed the permissions of {target}' },

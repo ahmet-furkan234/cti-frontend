@@ -36,7 +36,7 @@ for (const role of MOCK_ROLES) role.memberCount = MOCK_USERS.filter((u) => u.rol
 const descriptions: Record<string, string> = {
   [P.CVE_READ]: 'CVE kayıtlarını görüntüleme', [P.DASHBOARD_VIEW]: 'Dashboard görüntüleme',
   [P.SYNC_VIEW]: 'Senkronizasyon durumunu görüntüleme', [P.SYNC_RUN]: 'Senkronizasyon başlatma',
-  [P.USER_READ]: 'Kullanıcıları görüntüleme', [P.USER_CREATE]: 'Kullanıcı davet etme',
+  [P.USER_READ]: 'Kullanıcıları görüntüleme', [P.USER_CREATE]: 'Kullanıcı oluşturma',
   [P.USER_UPDATE]: 'Kullanıcıları düzenleme', [P.USER_DELETE]: 'Kullanıcı silme',
   [P.USER_RESET_PASSWORD]: 'Parola sıfırlama bağlantısı oluşturma', [P.ROLE_READ]: 'Rolleri görüntüleme',
   [P.ROLE_MANAGE]: 'Rolleri yönetme', [P.PERMISSION_ASSIGN]: 'İzin atama', [P.AUDIT_READ]: 'Denetim kayıtlarını görüntüleme',

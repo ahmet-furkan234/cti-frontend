@@ -3,6 +3,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { api, hasSessionHint, refreshSession, setAccessToken, setSessionLostHandler } from '@/lib/api';
+import { setActingCompany } from '@/lib/active-company';
 import type { LoginResponse, Me } from '@/lib/types';
 
 import { canSkipLogin, isLocalSession, setLocalSession } from '@/lib/local-auth';
@@ -21,6 +22,8 @@ interface AuthValue {
   logout: () => Promise<void>;
   applySession: (accessToken: string, user: Me) => void;
   reloadUser: () => Promise<void>;
+  /** Works inside another company (platform users) or back in one's own (null). Reloads the app so nothing stale stays on screen. */
+  switchCompany: (companyId: string | null) => void;
 }
 
 const AuthContext = createContext<AuthValue | null>(null);
@@ -33,6 +36,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const applySession = useCallback((token: string, me: Me) => {
     setLocalSession(false);
     setAccessToken(token);
+    // Working inside another company is for platform managers only; a different person signing in starts in their own.
+    if (!me.permissions.includes(PERMISSIONS.COMPANY_MANAGE)) setActingCompany(null);
     setUser(me);
     setStatus('authed');
   }, []);
@@ -40,6 +45,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const clear = useCallback(() => {
     setLocalSession(false);
     setAccessToken(null);
+    setActingCompany(null);
     setUser(null);
     setStatus('anon');
     queryClient.clear();
@@ -108,6 +114,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(await api<Me>('/auth/me'));
   }, []);
 
+  const switchCompany = useCallback((companyId: string | null) => {
+    setActingCompany(companyId);
+    window.location.assign('/');
+  }, []);
+
   const value = useMemo<AuthValue>(
     () => ({
       status,
@@ -117,9 +128,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       skipLogin,
       logout,
       reloadUser,
+      switchCompany,
       can: (...permissions) => !!user && permissions.some((p) => user.permissions.includes(p)),
     }),
-    [status, user, applySession, login, skipLogin, logout, reloadUser],
+    [status, user, applySession, login, skipLogin, logout, reloadUser, switchCompany],
   );
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

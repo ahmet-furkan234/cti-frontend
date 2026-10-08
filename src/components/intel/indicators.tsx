@@ -117,7 +117,15 @@ export function AddIndicatorsDrawer({ saving, onAdd, onClose }: { saving?: boole
   const byType = IOC_TYPES.map((ty) => [ty, parsed.ok.filter((x) => x.type === ty).length] as const).filter(([, n]) => n > 0);
 
   return (
-    <Drawer title={t('intel.imp.title')} onClose={onClose}>
+    <Drawer title={t('intel.imp.title')} onClose={onClose}
+      footer={
+        <>
+          <span className="grow" />
+          <Button variant="ghost" onClick={onClose}>{t('common.cancel')}</Button>
+          <Button variant="primary" icon="plus" loading={saving} disabled={parsed.ok.length === 0} onClick={() => onAdd(parsed.ok)}>{t('intel.imp.submit', { n: parsed.ok.length })}</Button>
+        </>
+      }
+    >
       <p className="text-[15px] text-ink-muted">{t('intel.imp.desc')}</p>
       <div className="flex flex-col gap-1.5">
         <label htmlFor="ioc-text" className="text-sm font-medium">{t('intel.imp.label')}</label>
@@ -132,11 +140,6 @@ export function AddIndicatorsDrawer({ saving, onAdd, onClose }: { saving?: boole
         </div>
       ) : null}
       {parsed.unknown > 0 ? <Banner tone="warning">{t('intel.imp.unknown', { n: parsed.unknown })}</Banner> : null}
-      <div className="sticky bottom-0 -mx-6 -mb-6 mt-auto flex items-center gap-2 border-t border-line bg-surface px-6 py-4">
-        <span className="grow" />
-        <Button variant="ghost" onClick={onClose}>{t('common.cancel')}</Button>
-        <Button variant="primary" icon="plus" loading={saving} disabled={parsed.ok.length === 0} onClick={() => onAdd(parsed.ok)}>{t('intel.imp.submit', { n: parsed.ok.length })}</Button>
-      </div>
     </Drawer>
   );
 }
