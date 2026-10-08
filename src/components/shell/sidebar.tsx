@@ -28,6 +28,7 @@ export const MAIN: NavEntry[] = [
   { id: 'intel', href: '/intel', icon: 'intel', label: 'nav.intel', needs: [P.INTEL_READ] },
   { id: 'alerts', href: '/alerts', icon: 'bell', label: 'nav.alerts', needs: [P.ALERT_READ] },
   { id: 'reports', href: '/reports', icon: 'report', label: 'nav.reports', needs: [P.REPORT_READ] },
+  { id: 'settings', href: '/admin/settings', icon: 'settings', label: 'nav.settings' },
 ];
 
 export const ADMIN: NavEntry[] = [
@@ -35,7 +36,6 @@ export const ADMIN: NavEntry[] = [
   { id: 'users', href: '/admin/users', icon: 'users', label: 'nav.users', needs: [P.USER_READ, P.ROLE_READ] },
   { id: 'audit', href: '/admin/audit', icon: 'audit', label: 'nav.audit', needs: [P.AUDIT_READ] },
   { id: 'sync', href: '/admin/sync', icon: 'sync', label: 'nav.sync', needs: [P.SYNC_VIEW], platformOnly: true },
-  { id: 'settings', href: '/admin/settings', icon: 'settings', label: 'nav.settings', platformOnly: true },
 ];
 
 function isActive(pathname: string, href: string): boolean {

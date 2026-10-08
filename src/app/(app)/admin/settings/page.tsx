@@ -3,9 +3,11 @@
 import { useState } from 'react';
 import { useAuth } from '@/components/auth-provider';
 import { SoftwareCombobox } from '@/components/assets/software-combobox';
-import { PageHeader, RequirePermission, RequirePlatform } from '@/components/shell/page-guard';
+import { PageHeader } from '@/components/shell/page-guard';
 import { LoadError, LoadingRows } from '@/components/shell/query-state';
-import { Banner, Button, Select, StateBlock, TextField } from '@/components/ui';
+import { Preferences } from '@/components/settings/preferences';
+import { Security } from '@/components/settings/security';
+import { Banner, Button, Select, StateBlock, Tabs, TextField } from '@/components/ui';
 import { useAliasMutations, useSoftwareAliases } from '@/features/assets/hooks';
 import { useI18n } from '@/i18n';
 import { ApiError } from '@/lib/api';
@@ -94,14 +96,27 @@ function SoftwareList() {
   );
 }
 
+type TabId = 'preferences' | 'security' | 'system';
+
 export default function SettingsPage() {
   const { t } = useI18n();
+  const { can, isPlatformScope } = useAuth();
+  const showSystem = isPlatformScope && can(P.ASSET_READ);
+  const [tab, setTab] = useState<TabId>('preferences');
+  const tabs = [
+    { id: 'preferences', label: t('settings.tab.preferences') },
+    { id: 'security', label: t('settings.tab.security') },
+    ...(showSystem ? [{ id: 'system', label: t('settings.tab.system') }] : []),
+  ];
+  const current = tab === 'system' && !showSystem ? 'preferences' : tab;
+
   return (
-    <RequirePlatform><RequirePermission any={[P.ASSET_READ]}>
-      <div className="mx-auto flex w-full max-w-[1100px] min-w-0 grow flex-col gap-5 p-4 md:p-8">
-        <PageHeader title={t('settings.title')} />
-        <SoftwareList />
-      </div>
-    </RequirePermission></RequirePlatform>
+    <div className="mx-auto flex w-full max-w-[1440px] min-w-0 grow flex-col gap-5 p-4 md:p-8">
+      <PageHeader title={t('settings.title')} subtitle={t('settings.subtitle')} />
+      <Tabs label={t('settings.title')} items={tabs} value={current} onChange={(v) => setTab(v as TabId)} />
+      {current === 'preferences' ? <Preferences /> : null}
+      {current === 'security' ? <Security /> : null}
+      {current === 'system' ? <SoftwareList /> : null}
+    </div>
   );
 }

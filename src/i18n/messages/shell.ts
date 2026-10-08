@@ -36,8 +36,6 @@ export const shell = defineMessages({
   'shell.health.warn': { tr: 'Bazı kaynaklar gecikmeli', en: 'Some sources are delayed' },
   'shell.health.fail': { tr: 'Kaynaklarda sorun var', en: 'Sources have problems' },
   'shell.lang': { tr: 'Dil', en: 'Language' },
-  'shell.theme.toLight': { tr: 'Açık temaya geç', en: 'Switch to light theme' },
-  'shell.theme.toDark': { tr: 'Koyu temaya geç', en: 'Switch to dark theme' },
   'shell.logout': { tr: 'Çıkış yap', en: 'Sign out' },
   'shell.myProfile': { tr: 'Profilim', en: 'My profile' },
   'shell.menu': { tr: 'Menü', en: 'Menu' },

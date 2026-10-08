@@ -6,13 +6,8 @@ import { useAuth } from '@/components/auth-provider';
 import { isLocalSession } from '@/lib/local-auth';
 import { Banner, Button, Skeleton } from '@/components/ui';
 import { useT } from '@/i18n';
-import type { Theme } from '@/lib/theme';
 import { Sidebar } from './sidebar';
 import { Topbar } from './topbar';
-
-function currentTheme(): Theme {
-  return typeof document !== 'undefined' && document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light';
-}
 
 export function AppShell({ children }: { children: ReactNode }) {
   const { status, user, switchCompany } = useAuth();
@@ -20,9 +15,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const t = useT();
   const [navOpen, setNavOpen] = useState(false);
-  const [theme, setTheme] = useState<Theme>('light');
 
-  useEffect(() => setTheme(currentTheme()), []);
   useEffect(() => setNavOpen(false), [pathname]);
   useEffect(() => {
     if (status === 'anon') router.replace(`/login?next=${encodeURIComponent(pathname)}`);
@@ -41,7 +34,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       {navOpen ? <div className="fixed inset-0 z-30 bg-black/40 lg:hidden" onClick={() => setNavOpen(false)} role="presentation" /> : null}
       <Sidebar open={navOpen} onNavigate={() => setNavOpen(false)} />
       <div className="flex min-w-0 grow flex-col">
-        <Topbar onToggleNav={() => setNavOpen((v) => !v)} theme={theme} onThemeChange={setTheme} />
+        <Topbar onToggleNav={() => setNavOpen((v) => !v)} />
         <main className="flex min-w-0 grow flex-col">
           {isLocalSession() ? <Banner tone="info" className="mx-4 mt-4 md:mx-8">{t('shell.localPreview')}</Banner> : null}
           {user?.actingCompany && user.company && user.actingCompany.id !== user.company.id ? (
