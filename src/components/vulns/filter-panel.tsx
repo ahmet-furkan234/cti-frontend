@@ -54,10 +54,18 @@ export function VulnFilterPanel({ filters, onChange, counts }: { filters: VulnFi
   if (band) tags.push({ key: 'cvss', label: `CVSS ${t(`cves.fp.band.${band}` as MessageKey)}`, remove: () => set({ cvss: [0, 10] }) });
   else if (min > 0 || max < 10) tags.push({ key: 'cvss', label: `CVSS ${min.toFixed(1)}–${max.toFixed(1)}`, remove: () => set({ cvss: [0, 10] }) });
   if (filters.kev || filters.epss > 0) tags.push({ key: 'threat', label: [filters.kev ? 'CISA KEV' : '', filters.epss > 0 ? `EPSS ≥ %${filters.epss}` : ''].filter(Boolean).join(' · '), remove: () => set({ kev: false, epss: 0 }) });
+  if (filters.sla || filters.overdue) tags.push({ key: 'sla', label: t(filters.overdue ? 'vulns.f.overdue' : 'vulns.f.sla'), remove: () => set({ sla: false, overdue: false }) });
   if (filters.env || filters.exposed) tags.push({ key: 'asset', label: [filters.env || '', filters.exposed ? t('vulns.f.exposed') : ''].filter(Boolean).join(' · '), remove: () => set({ env: '', exposed: false }) });
 
   return (
     <section className="min-w-0 rounded-xl border border-line bg-surface shadow-card" aria-label={t('vulns.filters')}>
+        <div className="border-b border-line px-4 py-3">
+          <Block title={t('vulns.tabs.label')}>
+            <div className="grid grid-cols-2 gap-1 rounded-xl bg-surface-2 p-1 sm:grid-cols-5" role="group" aria-label={t('vulns.tabs.label')}>
+              {STATUSES.map((s) => <StatusOption key={s} on={filters.status === s} onClick={() => set({ status: s })} label={t(STATUS_KEY[s])} count={counts[s]} />)}
+            </div>
+          </Block>
+        </div>
       <div className="flex flex-wrap items-center gap-x-3 gap-y-2 px-4 py-3">
         <Button size="sm" icon="filter" variant={open ? 'secondary' : 'ghost'} aria-expanded={open} onClick={() => setOpen((v) => !v)}>{t('vulns.filters')}{count ? <span className="ml-1 rounded-full bg-accent px-2 text-xs text-on-accent">{count}</span> : null}</Button>
         {!open ? tags.length ? <div className="flex min-w-0 flex-wrap gap-1.5">{tags.map((x) => <Tag key={x.key} tone="accent" onRemove={x.remove}>{x.label}</Tag>)}</div> : <span className="text-sm text-ink-subtle">{t('vulns.filters.none')}</span> : null}
@@ -65,14 +73,7 @@ export function VulnFilterPanel({ filters, onChange, counts }: { filters: VulnFi
         {count ? <Button size="sm" variant="ghost" onClick={() => onChange({ ...noVulnFilters(), q: filters.q })}>{t('common.clearFilters')}</Button> : null}
         <Button size="sm" variant="ghost" aria-label={t(open ? 'common.close' : 'vulns.filters')} onClick={() => setOpen((v) => !v)}><Icon name={open ? 'up' : 'down'} size={16} /></Button>
       </div>
-      {open ? <div className="grid grid-cols-1 gap-x-10 gap-y-7 border-t border-line px-5 py-6 md:grid-cols-2">
-        <div className="md:col-span-2">
-          <Block title={t('vulns.tabs.label')}>
-            <div className="grid grid-cols-2 gap-1 rounded-xl bg-surface-2 p-1 sm:grid-cols-5" role="group" aria-label={t('vulns.tabs.label')}>
-              {STATUSES.map((s) => <StatusOption key={s} on={filters.status === s} onClick={() => set({ status: s })} label={t(STATUS_KEY[s])} count={counts[s]} />)}
-            </div>
-          </Block>
-        </div>
+      {open ? <div className="grid grid-cols-1 gap-5 border-t border-line px-4 py-4 md:grid-cols-2 xl:grid-cols-4">
         <Block title={t('vulns.f.cvss')}>
           <div className="flex flex-wrap gap-2">{CVSS_BANDS.map((b) => <Option key={b.id} on={band === b.id} dot={BAND_DOT[b.id]} onClick={() => set({ cvss: band === b.id ? [0, 10] : b.range })}>{t(`cves.fp.band.${b.id}` as MessageKey)}</Option>)}</div>
           <RangeSlider min={0} max={10} value={filters.cvss} onChange={(cvss) => set({ cvss })} labelMin={t('cves.fp.cvssMin')} labelMax={t('cves.fp.cvssMax')} />
@@ -85,6 +86,10 @@ export function VulnFilterPanel({ filters, onChange, counts }: { filters: VulnFi
         <Block title={t('vulns.f.asset')}>
           <Select aria-label={t('vulns.f.env')} value={filters.env} onChange={(env) => set({ env })} options={[{ value: '', label: t('vulns.f.envAll') }, ...ENVS.map((env) => ({ value: env, label: t(`env.${env}` as MessageKey) }))]} />
           <Switch checked={filters.exposed} onChange={(exposed) => set({ exposed })} label={t('vulns.f.exposed')} />
+        </Block>
+        <Block title={t('vulns.f.remediation')}>
+          <Switch checked={filters.sla} onChange={(sla) => set({ sla, overdue: false })} label={t('vulns.f.sla')} />
+          <Switch checked={filters.overdue} onChange={(overdue) => set({ overdue, sla: false })} label={t('vulns.f.overdue')} />
         </Block>
       </div> : null}
     </section>

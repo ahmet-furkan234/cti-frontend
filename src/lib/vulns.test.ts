@@ -1,8 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import { VULN_ROWS } from '../mocks/vulns';
-import { filterVulns, groupVulns, isOverdue, isSoon, noVulnFilters, statusCounts } from './vulns';
+import { activeVulnFilterCount, filterVulns, groupVulns, isOverdue, isSoon, noVulnFilters, statusCounts } from './vulns';
 
 describe('vulns', () => {
+  it('counts SLA filters so they remain discoverable when the panel is collapsed', () => {
+    expect(activeVulnFilterCount({ ...noVulnFilters(), overdue: true })).toBe(1);
+    expect(activeVulnFilterCount({ ...noVulnFilters(), sla: true, overdue: true })).toBe(1);
+    expect(activeVulnFilterCount({ ...noVulnFilters(), kev: true, overdue: true })).toBe(2);
+  });
+
   it('classifies overdue and running-out matches', () => {
     expect(VULN_ROWS.filter(isOverdue).map((r) => r.host)).toEqual(['fw-edge-01']);
     expect(VULN_ROWS.filter(isSoon).length).toBeGreaterThan(0);

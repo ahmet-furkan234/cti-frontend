@@ -3,13 +3,13 @@ import type { CveAssetDto, VulnDto } from '@/lib/types';
 import type { CveAssetRow } from '@/mocks/cve-assets';
 import type { VulnRow } from '@/mocks/vulns';
 
-export type VulnItem = VulnRow & { id: string };
+export type VulnItem = VulnRow & { id: string; assetId: string; component: string; installedVersion: string | null };
 
 /** "openbsd:openssh" → "openssh" */
 const productOf = (component: string) => component.split(':')[1] ?? component;
 
 export const toVulnItem = (d: VulnDto): VulnItem => ({
-  id: d.id, cve: d.cve, kev: d.kev, host: d.host, env: d.env, exposed: d.exposed, cvss: d.cvss, epss: d.epss, status: d.status,
+  id: d.id, assetId: d.assetId, component: d.component, installedVersion: d.installedVersion, cve: d.cve, kev: d.kev, host: d.host, env: d.env, exposed: d.exposed, cvss: d.cvss, epss: d.epss, status: d.status,
   slaHours: d.slaHours, fix: d.fixedVersion ? `${productOf(d.component)} ${d.fixedVersion}` : '—',
 });
 

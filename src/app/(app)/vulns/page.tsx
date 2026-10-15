@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useMemo, useState } from 'react';
 import { PageHeader, RequirePermission } from '@/components/shell/page-guard';
 import { ExplainPopover, type ExplainTarget } from '@/components/vulns/explain';
+import { FindingsTable } from '@/components/vulns/findings-table';
 import { VulnFilterPanel } from '@/components/vulns/filter-panel';
 import { Banner, Button, Icon, KevFlag, RiskRing, SearchInput, Select, SeverityBadge, StateBlock, Tag, cx } from '@/components/ui';
 import { useI18n, type MessageKey } from '@/i18n';
@@ -15,7 +16,7 @@ import { PERMISSIONS as P } from '@/lib/permissions';
 import { ApiError } from '@/lib/api';
 import {
   filterVulns, groupVulns, isVulnFiltered, noVulnFilters, statusCounts,
-  type GroupBy, type VulnGroup,
+  isOverdue, type VulnSort, type GroupBy, type VulnGroup,
 } from '@/lib/vulns';
 import { riskOf, type VulnStatus } from '@/mocks/vulns';
 import { LoadError, LoadingRows } from '@/components/shell/query-state';
@@ -24,9 +25,9 @@ const STATUSES: VulnStatus[] = ['open', 'in_progress', 'mitigated', 'accepted'];
 
 function Tile({ label, sub, value, on, onClick, tone }: { label: string; sub: string; value: number; on: boolean; onClick: () => void; tone?: string }) {
   return (
-    <button type="button" aria-pressed={on} onClick={onClick} className={cx('flex min-w-0 flex-col gap-0.5 rounded-xl border bg-surface px-5 py-4 text-left shadow-card transition-colors', on ? 'border-accent bg-accent-soft' : 'border-line hover:border-line-strong')}>
+    <button type="button" aria-pressed={on} onClick={onClick} className={cx('flex min-w-0 flex-col gap-0.5 rounded-xl border bg-surface px-4 py-3 text-left shadow-card transition-colors', on ? 'border-accent bg-accent-soft' : 'border-line hover:border-line-strong')}>
       <span className="text-sm text-ink-muted">{label}</span>
-      <span className={cx('text-3xl leading-9 font-semibold tabular-nums', value > 0 && tone)}>{value}</span>
+      <span className={cx('text-2xl leading-8 font-semibold tabular-nums', value > 0 && tone)}>{value}</span>
       <span className="text-sm text-ink-subtle">{sub}</span>
     </button>
   );
@@ -139,46 +140,64 @@ function Vulns() {
   const setStatus = useSetVulnStatus();
   const rows = useMemo(() => (query.data?.items ?? []).map(toVulnItem), [query.data]);
   const [filters, setFilters] = useState(noVulnFilters);
-  const [by, setBy] = useState<GroupBy>('cve');
+  const [by, setBy] = useState<GroupBy | 'table'>('table');
+  const [sort, setSort] = useState<VulnSort>('risk');
+  const [page, setPage] = useState(1);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const updateFilters = (next: ReturnType<typeof noVulnFilters>) => { setFilters(next); setPage(1); setSelected(new Set()); };
   const [openKey, setOpenKey] = useState<string | null>(null);
   const [explain, setExplain] = useState<ExplainTarget | null>(null);
   const [notice, setNotice] = useState<{ tone: 'success' | 'error'; text: string } | null>(null);
-  const set = (patch: Partial<typeof filters>) => setFilters((f) => ({ ...f, ...patch }));
+  const set = (patch: Partial<typeof filters>) => updateFilters({ ...filters, ...patch });
 
   const visible = useMemo(() => filterVulns(rows, filters), [rows, filters]);
-  const groups = useMemo(() => groupVulns(visible, by, 'risk'), [visible, by]);
+  const groups = useMemo(() => groupVulns(visible, by === 'table' ? 'cve' : by, sort), [visible, by, sort]);
   // Tab counts ignore the status filter itself so each chip shows what it would give.
   const counts = useMemo(() => statusCounts(filterVulns(rows, { ...filters, status: 'all' })), [rows, filters]);
+  const sorted = useMemo(() => [...visible].sort((a, b) => sort === 'sla' ? (a.slaHours ?? Infinity) - (b.slaHours ?? Infinity) || riskOf(b) - riskOf(a) : riskOf(b) - riskOf(a)), [visible, sort]);
+  const totalPages = Math.max(1, Math.ceil((by === 'table' ? sorted.length : groups.length) / 25));
+  const currentPage = Math.min(page, totalPages);
+  const pageRows = sorted.slice((currentPage - 1) * 25, currentPage * 25);
+  const pageGroups = groups.slice((currentPage - 1) * 25, currentPage * 25);
+  const selectedRows = visible.filter((r) => selected.has(r.id));
+  const explainRow = (r: VulnItem, e: React.MouseEvent<HTMLButtonElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    setExplain({ row: r, x: rect.right + 12, y: rect.top - 20 });
+  };
   const filtered = isVulnFiltered(filters);
-  const open = openKey ?? groups[0]?.key ?? null;
+  const open = openKey ?? pageGroups[0]?.key ?? null;
 
   const changeStatus = (targets: VulnItem[], status: VulnStatus) => {
+    if (setStatus.isPending || targets.length === 0) return;
     if (status === 'accepted' && !window.confirm(targets.length > 1 ? t('vulns.status.confirmAcceptMany', { n: targets.length }) : t('vulns.status.confirmAccept'))) return;
     setStatus.mutate({ ids: targets.map((r) => r.id), status }, {
-      onSuccess: () => setNotice({ tone: 'success', text: t('vulns.status.updated') }),
+      onSuccess: () => { setSelected(new Set()); setNotice({ tone: 'success', text: t('vulns.status.updated') }); },
       onError: (e) => setNotice({ tone: 'error', text: e instanceof ApiError && e.code === 'LOCAL_PREVIEW' ? t('asset.err.demo') : t('common.tryAgainLater') }),
     });
   };
 
   return (
-    <div className="mx-auto flex w-full max-w-[1100px] min-w-0 grow flex-col gap-5 p-4 md:p-8">
-      <PageHeader title={t('vulns.title')} subtitle={t('vulns.subtitle')} actions={demo ? <Tag tone="accent">{t('common.demoData')}</Tag> : undefined} />
+    <div className="mx-auto flex w-full max-w-[1600px] min-w-0 grow flex-col gap-4 p-4 lg:p-6">
+      <PageHeader title={t('vulns.title')} subtitle={t('vulns.subtitle')} actions={<>{demo ? <Tag tone="accent">{t('common.demoData')}</Tag> : null}<Button size="sm" disabled={query.isFetching} onClick={() => void query.refetch()}>{t('vulns.refresh')}</Button></>} />
 
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
         <Tile label={t('vulns.tile.kev')} sub={t('vulns.tile.kev.sub')} value={rows.filter((r) => r.kev).length} on={filters.kev} onClick={() => set({ kev: !filters.kev })} tone="text-critical-ink" />
         <Tile label={t('vulns.tile.open')} sub={t('vulns.tile.open.sub')} value={rows.filter((r) => r.status === 'open').length} on={filters.status === 'open'} onClick={() => set({ status: filters.status === 'open' ? 'all' : 'open' })} />
+        <Tile label={t('vulns.tile.overdue')} sub={t('vulns.f.remediation')} value={rows.filter(isOverdue).length} on={filters.overdue} onClick={() => set({ overdue: !filters.overdue, sla: false })} tone="text-critical-ink" />
+        <Tile label={t('vulns.f.exposed')} sub={t('vulns.f.asset')} value={rows.filter((r) => r.exposed).length} on={filters.exposed} onClick={() => set({ exposed: !filters.exposed })} />
       </div>
+      {rows.length >= 2000 ? <Banner tone="info">{t('vulns.loadedLimit')}</Banner> : null}
 
-      <div className="flex flex-col gap-3">
+      <div className="flex flex-col gap-2">
         <SearchInput
-          size="lg"
+          size="md"
           shortcut={null}
           className="w-full shadow-card"
           placeholder={t('vulns.searchPlaceholder')}
           value={filters.q}
           onChange={(e) => set({ q: e.target.value })}
         />
-        <VulnFilterPanel filters={filters} onChange={setFilters} counts={counts} />
+        <VulnFilterPanel filters={filters} onChange={updateFilters} counts={counts} />
       </div>
 
       {notice ? <Banner tone={notice.tone} onDismiss={() => setNotice(null)}>{notice.text}</Banner> : null}
@@ -186,18 +205,24 @@ function Vulns() {
       <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
         <div className="grow text-[15px]">
           <span className="font-semibold">{t('vulns.results', { n: visible.length })}</span>
-          <span className="ml-2 text-sm text-ink-subtle">{t('vulns.groups', { n: groups.length })}</span>
+          {by !== 'table' ? <span className="ml-2 text-sm text-ink-subtle">{t('vulns.groups', { n: groups.length })}</span> : null}
         </div>
-        {filtered ? <Button size="sm" variant="ghost" onClick={() => setFilters(noVulnFilters())}>{t('vulns.clear')}</Button> : null}
+        {filtered ? <Button size="sm" variant="ghost" onClick={() => updateFilters(noVulnFilters())}>{t('vulns.clear')}</Button> : null}
+        <Select size="sm" className="w-52" aria-label={t('vulns.sort.label')} value={sort} onChange={(v) => { setSort(v as VulnSort); setPage(1); setSelected(new Set()); }} options={(['risk', 'sla'] as const).map((v) => ({ value: v, label: t(`vulns.sort.${v}`) }))} />
         <div role="group" aria-label={t('vulns.view.label')} className="flex rounded-lg border border-line-strong bg-surface p-0.5 text-sm font-medium">
-          {(['cve', 'host'] as GroupBy[]).map((g) => (
-            <button key={g} type="button" aria-pressed={by === g} onClick={() => { setBy(g); setOpenKey(null); }} className={cx('h-8 rounded-md px-3 transition-colors', by === g ? 'bg-accent-soft text-accent' : 'text-ink-muted hover:text-ink')}>
+          {(['table', 'cve', 'host'] as const).map((g) => (
+            <button key={g} type="button" aria-pressed={by === g} onClick={() => { setBy(g); setOpenKey(null); setPage(1); setSelected(new Set()); }} className={cx('h-8 rounded-md px-3 transition-colors', by === g ? 'bg-accent-soft text-accent' : 'text-ink-muted hover:text-ink')}>
               {t(`vulns.view.${g}` as MessageKey)}
             </button>
           ))}
         </div>
       </div>
 
+      {selectedRows.length > 0 && by === 'table' ? <div className="flex flex-wrap items-center gap-3 rounded-lg border border-accent/30 bg-accent-soft px-4 py-2" role="region" aria-label={t('vulns.bulk')}>
+        <span className="text-sm font-semibold">{t('vulns.selected', { n: selectedRows.length })}</span>
+        <Select size="sm" className="w-60" value="" disabled={setStatus.isPending} aria-label={t('vulns.bulk')} placeholder={t('vulns.bulk')} options={STATUSES.map((s) => ({ value: s, label: t(`status.${s}` as MessageKey) }))} onChange={(v) => changeStatus(selectedRows, v as VulnStatus)} />
+        <Button size="sm" variant="ghost" onClick={() => setSelected(new Set())}>{t('vulns.selectionClear')}</Button>
+      </div> : null}
       {query.isError ? (
         <div className="rounded-xl border border-line bg-surface shadow-card"><LoadError onRetry={() => void query.refetch()} /></div>
       ) : query.isPending ? (
@@ -205,18 +230,24 @@ function Vulns() {
       ) : groups.length === 0 ? (
         <div className="rounded-xl border border-line bg-surface shadow-card">
           {filtered ? (
-            <StateBlock kind="no-results" title={t('vulns.empty.title')} description={t('vulns.empty.desc')} action={<Button onClick={() => setFilters(noVulnFilters())}>{t('vulns.clear')}</Button>} />
+            <StateBlock kind="no-results" title={t('vulns.empty.title')} description={t('vulns.empty.desc')} action={<Button onClick={() => updateFilters(noVulnFilters())}>{t('vulns.clear')}</Button>} />
           ) : (
             <StateBlock kind="empty" title={t('vulns.none.title')} description={t('vulns.none.desc')} />
           )}
         </div>
+      ) : by === 'table' ? (
+        <FindingsTable rows={pageRows} selected={selected} canEdit={canEdit} pending={setStatus.isPending} onExplain={explainRow}
+          onSelect={(id) => setSelected((prev) => { const next = new Set(prev); if (next.has(id)) next.delete(id); else next.add(id); return next; })}
+          onSelectPage={() => setSelected((prev) => { const next = new Set(prev); const all = pageRows.every((r) => next.has(r.id)); pageRows.forEach((r) => { if (all) next.delete(r.id); else next.add(r.id); }); return next; })}
+          renderStatus={(r) => <StatusSelect value={r.status} name={`${r.cve} / ${r.host}`} disabled={!canEdit || setStatus.isPending} onChange={(status) => changeStatus([r], status)} />}
+        />
       ) : (
         <ul className="m-0 flex list-none flex-col gap-3 p-0">
-          {groups.map((g) => (
+          {pageGroups.map((g) => (
             <GroupCard
               key={`${g.by}:${g.key}`}
               g={g}
-              canEdit={canEdit}
+              canEdit={canEdit && !setStatus.isPending}
               open={open === g.key}
               onToggle={() => setOpenKey(open === g.key ? '' : g.key)}
               onSetAll={(s) => changeStatus(g.rows, s)}
@@ -229,6 +260,10 @@ function Vulns() {
           ))}
         </ul>
       )}
+      {!query.isPending && !query.isError && visible.length > 0 ? <div className="flex items-center justify-between gap-3 text-sm text-ink-muted">
+        <span>{t('vulns.page', { page: currentPage, total: totalPages })}</span>
+        <div className="flex gap-2"><Button size="sm" disabled={currentPage === 1} onClick={() => { setPage(currentPage - 1); setSelected(new Set()); }}>{t('vulns.prev')}</Button><Button size="sm" disabled={currentPage === totalPages} onClick={() => { setPage(currentPage + 1); setSelected(new Set()); }}>{t('vulns.next')}</Button></div>
+      </div> : null}
       {explain ? <ExplainPopover target={explain} onClose={() => setExplain(null)} /> : null}
     </div>
   );

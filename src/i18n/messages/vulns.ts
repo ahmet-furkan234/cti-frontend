@@ -1,7 +1,21 @@
 import { defineMessages } from "../define";
 
 export const vulns = defineMessages({
-  "vulns.col.risk": { tr: "Risk", en: "Risk" },
+  'vulns.view.table': { tr: 'Tüm bulgular', en: 'All findings' },
+  'vulns.col.asset': { tr: 'Varlık / ortam', en: 'Asset / environment' },
+  'vulns.col.fix': { tr: 'Bileşen / düzeltme', en: 'Component / fix' },
+  'vulns.col.cve': { tr: 'Zafiyet', en: 'Vulnerability' },
+  'vulns.select': { tr: 'Seç: {name}', en: 'Select: {name}' },
+  'vulns.selectPage': { tr: 'Bu sayfadaki bulguları seç', en: 'Select findings on this page' },
+  'vulns.selected': { tr: '{n} bulgu seçildi', en: '{n} findings selected' },
+  'vulns.selectionClear': { tr: 'Seçimi kaldır', en: 'Clear selection' },
+  'vulns.bulk': { tr: 'Seçilenlerin durumunu değiştir', en: 'Change selected status' },
+  'vulns.page': { tr: '{page} / {total} sayfa', en: 'Page {page} of {total}' },
+  'vulns.prev': { tr: 'Önceki', en: 'Previous' },
+  'vulns.next': { tr: 'Sonraki', en: 'Next' },
+  'vulns.refresh': { tr: 'Yenile', en: 'Refresh' },
+  'vulns.loadedLimit': { tr: 'İlk 2.000 bulgu yüklendi. Sayaçlar ve filtreler yüklenen bulguları kapsar.', en: 'The first 2,000 findings are loaded. Counts and filters cover loaded findings.' },
+  'vulns.col.risk': { tr: "Risk", en: "Risk" },
   "vulns.col.status": { tr: "Durum", en: "Status" },
   "vulns.title": { tr: "Zafiyetler", en: "Vulnerabilities" },
   "vulns.subtitle": {

@@ -110,7 +110,7 @@ export function AssetsTab({ cveId }: { cveId: string }) {
   const query = useCveAssets(cveId, can(P.VULN_READ));
   const age = useAgeMinutes();
   const [q, setQ] = useState('');
-  const cols = { '--cols': '44px 190px 150px 140px 120px 80px 150px 120px 100px minmax(0, 1fr)' } as React.CSSProperties;
+  const cols = { '--cols': '48px minmax(150px, 1.3fr) minmax(120px, 1fr) 96px 96px 72px 104px minmax(104px, 1fr) 124px minmax(130px, 1.2fr)' } as React.CSSProperties;
   const all = useMemo(() => (query.data?.items ?? []).map(toCveAssetRow), [query.data]);
   const rows = all.filter((r) => `${r.host} ${r.ip} ${r.owner ?? ''}`.toLowerCase().includes(q.toLowerCase()));
   const CVE_ASSET_STATS = query.data?.stats ?? { affected: 0, exposed: 0, open: 0, inProgress: 0, mitigated: 0 };
@@ -141,30 +141,32 @@ export function AssetsTab({ cveId }: { cveId: string }) {
           <span className="grow" />
         </div>
         <div className="overflow-x-auto">
-          <div className="grid min-h-12 items-center gap-3 border-b border-line px-5 last:border-b-0 [grid-template-columns:var(--cols)] sticky top-0 z-1 h-10! min-h-0! bg-surface-2 text-sm font-medium text-ink-muted" style={cols}>
+         <div className="min-w-[1120px]">
+          <div className="grid h-10 items-center gap-3 border-b border-line bg-surface-2 px-5 text-sm font-medium text-ink-muted [grid-template-columns:var(--cols)]" style={cols}>
             <span>{t('vulns.col.risk')}</span><span>{t('assets.col.asset')}</span><span>OS</span><span>{t('cve.assets.col.installed')}</span><span>{t('cve.assets.col.target')}</span>
             <span>{t('assets.col.env')}</span><span>{t('vulns.col.status')}</span><span>{t('vulns.col.assignee')}</span><span>SLA</span><span>{t('cve.assets.col.source')}</span>
           </div>
           {rows.map((r) => (
-            <div key={r.host} className="grid min-h-12 items-center gap-3 border-b border-line px-5 last:border-b-0 [grid-template-columns:var(--cols)] h-[46px]" style={{ ...cols }}>
+            <div key={r.host} className="grid h-[54px] items-center gap-3 border-b border-line px-5 last:border-b-0 [grid-template-columns:var(--cols)]" style={cols}>
               <RiskRing score={r.risk} />
               <span className="flex flex-col min-w-0">
                 <span className="flex items-center gap-1.5">
-                  <span className="text-[13px] font-medium">{r.host}</span>
+                  <span className="truncate text-[13px] font-medium">{r.host}</span>
                   {r.exposed ? <Icon name="globe" size={12} className="text-high-ink" aria-label={t('assets.exposed')} /> : null}
                 </span>
-                <span className="font-mono text-xs text-ink-muted">{r.ip}</span>
+                <span className="truncate font-mono text-xs text-ink-muted">{r.ip}</span>
               </span>
               <span className="truncate text-[13px]">{r.os}</span>
               <span className="font-mono text-[13px] text-high-ink">{r.installed}</span>
               <span className="font-mono text-[13px] text-low-ink">{r.fixed}</span>
               <span><Tag>{r.env}</Tag></span>
               <StatusPill status={r.status} />
-              <span className="text-[13px]" style={{ color: r.owner ? 'var(--ink)' : 'var(--ink-subtle)' }}>{r.owner ?? t('vulns.unassigned')}</span>
+              <span className="truncate text-[13px]" style={{ color: r.owner ? 'var(--ink)' : 'var(--ink-subtle)' }}>{r.owner ?? t('vulns.unassigned')}</span>
               <span>{r.slaHours != null ? <SlaChip hoursLeft={r.slaHours} /> : null}</span>
               <span className="truncate text-ink-muted text-[13px]">{r.source} · {age(r.seenMin)}</span>
             </div>
           ))}
+         </div>
         </div>
         <div className="flex items-center gap-3 text-ink-muted py-2.5 px-4 text-[13px]">
           <span className="grow">{t('cve.assets.range', { from: 1, to: rows.length, total: CVE_ASSET_STATS.affected })}</span>
