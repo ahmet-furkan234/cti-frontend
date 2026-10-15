@@ -7,7 +7,6 @@ import { PageHeader, RequirePermission } from '@/components/shell/page-guard';
 import { Button, Icon, KevFlag, RiskRing, Skeleton, SlaChip, StateBlock, StatusPill, buttonClass, cx, type IconName } from '@/components/ui';
 import { RankedBars, SeverityDonut } from '@/components/dashboard/charts';
 import { useAssets } from '@/features/assets/hooks';
-import { useCveStats } from '@/features/cves/hooks';
 import { useVulns } from '@/features/vulns/hooks';
 import { useI18n, type MessageKey } from '@/i18n';
 import { api } from '@/lib/api';
@@ -211,22 +210,6 @@ function CompanySection() {
   );
 }
 
-/** Worldwide picture, kept small: it is context for the company view above, not the main story. */
-function WorldSection() {
-  const { t, locale } = useI18n();
-  const { data, isPending } = useCveStats();
-  const nf = (n: number) => formatNumber(n, locale);
-  return (
-    <Panel title={t('dash.world.title')} sub={t('dash.world.sub')} action={<Link href="/cves" className="text-sm font-medium">{t('dash.world.all')}</Link>}>
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <Kpi label={t('dash.k.new')} hint={t('dash.k.new.hint')} icon="clock" value={data ? nf(data.addedLast24h) : ''} loading={isPending} />
-        <Kpi label={t('dash.k.kev')} hint={t('dash.k.kev.hint')} icon="flame" tone="text-critical-ink" value={data ? nf(data.kevCount) : ''} href="/cves?kev=1" loading={isPending} />
-        <Kpi label={t('dash.k.critical')} hint={t('dash.k.critical.hint')} icon="alert" tone="text-critical-ink" value={data ? nf(data.criticalCount) : ''} href="/cves?severity=critical" loading={isPending} />
-      </div>
-    </Panel>
-  );
-}
-
 function Dashboard() {
   const { t, locale } = useI18n();
   const { can, user } = useAuth();
@@ -256,7 +239,6 @@ function Dashboard() {
         }
       />
       {company ? <CompanySection /> : null}
-      {can(P.CVE_READ) ? <WorldSection /> : null}
     </div>
   );
 }

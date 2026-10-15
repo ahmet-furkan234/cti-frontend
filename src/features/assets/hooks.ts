@@ -114,6 +114,16 @@ export const useProductSearch = (q: string, enabled = true) =>
     queryFn: ({ signal }) => api<{ items: ProductSuggestionDto[] }>('/assets/software/products', { query: { q }, signal }),
   });
 
+/** Versions worth suggesting for a product (from CVE data and latest releases); empty when unknown or the API is down. */
+export const useProductVersions = (product: string) =>
+  useQuery({
+    queryKey: ['product-versions', product],
+    enabled: product.trim().length > 0,
+    retry: false,
+    staleTime: 30 * 60_000,
+    queryFn: ({ signal }) => api<{ items: string[] }>('/assets/software/versions', { query: { product }, signal }),
+  });
+
 export const useSoftwareAliases = () => useQuery({ queryKey: ['software-aliases'], queryFn: () => api<{ items: SoftwareAliasDto[] }>('/assets/software/aliases') });
 
 export function useAliasMutations() {

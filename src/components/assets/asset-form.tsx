@@ -1,6 +1,7 @@
 'use client';
 
 import { Button, Icon, Select, Switch, Tag, TextField, cx } from '@/components/ui';
+import { VersionPicker } from '@/components/assets/version-picker';
 import { SoftwareCombobox, productLabel } from '@/components/assets/software-combobox';
 import { useSoftwareCheck } from '@/features/assets/hooks';
 import { useI18n, type MessageKey, type TFunction } from '@/i18n';
@@ -329,7 +330,7 @@ export function AssetForm({
               <div key={x.id} className="flex flex-col gap-1.5">
               <div className="flex items-start gap-2">
                 <SoftwareCombobox className="grow" label={t('asset.sw.name')} placeholder={t('asset.sw.name.hint')} value={x.name} onChange={(v) => setSoftware(x.id, { name: v })} />
-                <TextField className="w-36 shrink-0" aria-label={t('asset.sw.version')} placeholder={t('asset.sw.version.hint')} value={x.version} onChange={(e) => setSoftware(x.id, { version: e.target.value })} />
+                <VersionPicker className="w-36 shrink-0" product={x.name} value={x.version} onChange={(v) => setSoftware(x.id, { version: v })} />
                 <button
                   type="button"
                   aria-label={t('asset.sw.remove')}

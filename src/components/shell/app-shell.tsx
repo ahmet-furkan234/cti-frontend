@@ -38,7 +38,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         <main className="flex min-w-0 grow flex-col">
           {isLocalSession() ? <Banner tone="info" className="mx-4 mt-4 md:mx-8">{t('shell.localPreview')}</Banner> : null}
           {user?.actingCompany && user.company && user.actingCompany.id !== user.company.id ? (
-            <Banner tone="warning" className="mx-4 mt-4 md:mx-8" action={<Button size="sm" onClick={() => switchCompany(null)}>{t('companies.back')}</Button>}>
+            <Banner tone="warning" className="mx-4 mt-4 text-center md:mx-8" action={<Button size="sm" onClick={() => switchCompany(null)}>{t('companies.back')}</Button>}>
               {t('companies.acting', { name: user.actingCompany.name })}
             </Banner>
           ) : null}
