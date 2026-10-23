@@ -396,6 +396,7 @@ export interface RuleDto {
   id: string;
   name: string;
   trigger: 'kev' | 'critical' | 'sla' | 'epss' | 'sync' | 'digest';
+  assetIds?: string[];
   envs: string[];
   minRisk: number;
   exposedOnly: boolean;

@@ -58,6 +58,8 @@ function SoftwareList() {
         <form onSubmit={(e) => { e.preventDefault(); add(); }} className="grid grid-cols-1 items-start gap-4 md:grid-cols-[1fr_1.4fr_auto]">
           <TextField label={t('settings.sw.name')} hint={t('settings.sw.name.hint')} value={name} onChange={(e) => setName(e.target.value)} />
           <div className="flex min-w-0 flex-col gap-1.5">
+            {/* The combobox only carries an aria-label; the visible one keeps this column level with the text field next to it. */}
+            <span className="text-sm font-medium text-ink" aria-hidden="true">{t('settings.sw.product')}</span>
             <SoftwareCombobox
               label={t('settings.sw.product')}
               placeholder={t('settings.sw.product.hint')}

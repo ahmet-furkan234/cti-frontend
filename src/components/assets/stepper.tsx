@@ -13,6 +13,8 @@ export function Stepper({
   label: string;
 }) {
   return (
+    // Labels hide by this component's own width, not the viewport's: in a 440px drawer the three labels do not fit even on a wide screen.
+    <div className="@container">
     <ol aria-label={label} className="m-0 flex list-none items-start gap-2 p-0">
       {steps.map((s, i) => {
         const done = i < current;
@@ -29,23 +31,24 @@ export function Stepper({
             >
               {done ? <Icon name="check" size={16} strokeWidth={2.25} /> : i + 1}
             </span>
-            <span className={cx('min-w-0 flex-col text-left', active ? 'flex' : 'hidden md:flex')}>
+            <span className={cx('min-w-0 flex-col text-left', active ? 'flex' : 'hidden @md:flex')}>
               <span className={cx('truncate font-medium', !active && !done && 'text-ink-muted')}>{s.label}</span>
               <span className="hidden truncate text-sm text-ink-muted lg:block">{s.hint}</span>
             </span>
           </>
         );
         return (
-          <li key={s.id} aria-current={active ? 'step' : undefined} className={cx('flex items-center gap-3', i < steps.length - 1 ? 'min-w-0 grow' : 'shrink-0', !active && 'shrink-0 md:shrink')}>
+          <li key={s.id} aria-current={active ? 'step' : undefined} className={cx('flex items-center gap-3', i < steps.length - 1 ? 'min-w-0 grow' : 'shrink-0', !active && 'shrink-0 @md:shrink')}>
             {done && onJump ? (
-              <button type="button" className="flex items-center gap-3 rounded-lg" onClick={() => onJump(i)}>{body}</button>
+              <button type="button" className="flex min-w-0 items-center gap-3 rounded-lg" onClick={() => onJump(i)}>{body}</button>
             ) : (
-              <div className="flex items-center gap-3">{body}</div>
+              <div className="flex min-w-0 items-center gap-3">{body}</div>
             )}
-            {i < steps.length - 1 ? <span aria-hidden="true" className={cx('hidden h-px min-w-6 grow md:block', done ? 'bg-accent' : 'bg-line-strong')} /> : null}
+            {i < steps.length - 1 ? <span aria-hidden="true" className={cx('h-px min-w-4 grow', done ? 'bg-accent' : 'bg-line-strong')} /> : null}
           </li>
         );
       })}
     </ol>
+    </div>
   );
 }

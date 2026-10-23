@@ -9,7 +9,7 @@ export const toChannel = (d: ChannelDto): Channel => ({
 });
 
 export const toRule = (d: RuleDto): Rule => ({
-  id: d.id, name: d.name, trigger: d.trigger, envs: d.envs, minRisk: d.minRisk, exposedOnly: d.exposedOnly, tag: d.tag, channelIds: d.channelIds,
+  id: d.id, name: d.name, trigger: d.trigger, assetIds: d.assetIds ?? [], envs: d.envs, minRisk: d.minRisk, exposedOnly: d.exposedOnly, tag: d.tag, channelIds: d.channelIds,
   throttle: d.throttle, enabled: d.enabled, lastFiredMin: d.lastFiredAt ? minutesSince(d.lastFiredAt) : null, fired30: d.fired30,
 });
 

@@ -2,9 +2,9 @@
 
 import { useRef, useState } from 'react';
 import { OptionalFields } from '@/components/forms/optional-fields';
-import { Drawer } from '@/components/admin/admin-parts';
+import { AlertEditor } from './editor';
 import { Card, ChannelStatusPill, KindBadge } from '@/components/alerts/shared';
-import { Banner, Button, Select, StateBlock, TextField, cx } from '@/components/ui';
+import { Banner, Button, Icon, StateBlock, TextField, cx } from '@/components/ui';
 import { useI18n, type MessageKey } from '@/i18n';
 import { CHANNEL_KINDS, CHANNEL_KIND_ORDER, channelTarget } from '@/lib/alerts';
 import { useAgeMinutes } from '@/lib/use-age';
@@ -30,7 +30,7 @@ export function ChannelGrid({
       {channels.map((c) => {
         const used = rules.filter((r) => r.channelIds.includes(c.id)).length;
         return (
-          <Card key={c.id} className={cx('flex flex-col gap-4 p-5', c.status === 'failing' && 'border-critical/40')}>
+          <Card key={c.id} className={cx('flex flex-col gap-5 p-6', c.status === 'failing' && 'border-critical/40')}>
             <div className="flex items-start gap-3">
               <KindBadge kind={c.kind} />
               <div className="min-w-0 grow">
@@ -45,7 +45,7 @@ export function ChannelGrid({
               {' · '}
               {c.lastTestMin == null ? t('alerts.ch.neverTested') : t('alerts.ch.lastTest', { age: ageMin(c.lastTestMin) })}
             </p>
-            <div className="mt-auto flex gap-2">
+            <div className="mt-auto flex gap-2 border-t border-line pt-4">
               <Button size="sm" loading={testing === c.id} onClick={() => onTest(c.id)}>{testing === c.id ? t('alerts.ch.testing') : t('alerts.ch.test')}</Button>
               <Button size="sm" variant="ghost" onClick={() => onEdit(c)}>{t('alerts.ch.settings')}</Button>
             </div>
@@ -89,7 +89,7 @@ export function ChannelDrawer({
   };
 
   return (
-    <Drawer medium title={channel ? channel.name : t('alerts.ch.add')} onClose={onClose}
+    <AlertEditor subtitle={t('alerts.design.connectHint')} summary={<div className="flex flex-col gap-5"><KindBadge kind={kind} size={56} /><h3 className="text-xl font-semibold">{t(`alerts.ch.kind.${kind}` as MessageKey)}</h3><p className="text-sm leading-6 text-ink-muted">{t(`alerts.ch.kind.${kind}.desc` as MessageKey)}</p><div className="border-t border-line pt-5"><p className="text-xs text-ink-muted">{t('alerts.ch.name')}</p><p className="mt-2 break-words font-medium">{name || t('alerts.design.connect')}</p></div></div>} title={channel ? channel.name : t('alerts.ch.add')} onClose={onClose}
       footer={
         <>
           {onRemove ? <Button variant="danger" icon="trash" onClick={onRemove}>{t('alerts.ch.remove')}</Button> : null}
@@ -102,7 +102,8 @@ export function ChannelDrawer({
       {channel?.problem ? <Banner tone={channel.status === 'failing' ? 'error' : 'warning'}>{channel.problem[lang]}</Banner> : null}
       <p className="text-[15px] text-ink-muted">{t(`alerts.ch.kind.${kind}.desc` as MessageKey)}</p>
       <form id="channel-form" onSubmit={(e) => { e.preventDefault(); save(); }} className="flex flex-col gap-4">
-        {!channel ? <Select aria-label={t('alerts.ch.pick')} disabled={saving} value={kind} onChange={(v) => pick(v as ChannelKind)} options={CHANNEL_KIND_ORDER.map((k) => ({ value: k, label: t(`alerts.ch.kind.${k}` as MessageKey) }))} /> : null}
+        {!channel ? <div className="grid grid-cols-1 gap-3 sm:grid-cols-2" role="group" aria-label={t('alerts.ch.pick')}>{CHANNEL_KIND_ORDER.map(k => <button key={k} type="button" disabled={saving} aria-pressed={kind === k} onClick={() => pick(k)} className={cx('flex items-start gap-3 rounded-xl border p-4 text-left transition-colors', kind === k ? 'border-accent bg-accent-soft' : 'border-line hover:bg-surface-2')}><KindBadge kind={k} /><span className="min-w-0 grow"><span className="block font-semibold">{t(`alerts.ch.kind.${k}` as MessageKey)}</span><span className="mt-1 block text-xs leading-5 text-ink-muted">{t(`alerts.ch.kind.${k}.desc` as MessageKey)}</span></span>{kind === k ? <Icon name="check" className="text-accent" /> : null}</button>)}</div> : null}
+        <h3 className="mt-4 border-t border-line pt-5 font-semibold">{t('alerts.design.connection')}</h3>
         <TextField autoFocus={!channel} disabled={saving} label={t('alerts.ch.name')} value={name} onChange={(e) => setName(e.target.value)} error={showErrors && !name.trim() ? t('alerts.err.name') : undefined} />
         {spec.fields.filter((f) => f.required).map((f) => (
           <TextField
@@ -122,6 +123,6 @@ export function ChannelDrawer({
           {spec.fields.filter((f) => !f.required).map((f) => <TextField key={f.id} label={t(`alerts.chf.${kind}.${f.id}` as MessageKey)} type={f.secret ? 'password' : 'text'} autoComplete="off" mono={f.mono} value={values[f.id] ?? ''} onChange={(e) => setValues((v) => ({ ...v, [f.id]: e.target.value }))} />)}
         </OptionalFields> : null}
       </form>
-    </Drawer>
+    </AlertEditor>
   );
 }

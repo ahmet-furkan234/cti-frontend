@@ -7,7 +7,7 @@ import { RuleDrawer, RuleList, newDraft, type RuleDraft } from '@/components/ale
 import { useAuth } from '@/components/auth-provider';
 import { PageHeader, RequirePermission } from '@/components/shell/page-guard';
 import { LoadError, LoadingRows } from '@/components/shell/query-state';
-import { Banner, Button, Tabs, Tag, cx } from '@/components/ui';
+import { Banner, Button, Icon, Select, Tabs, Tag, TextField, cx } from '@/components/ui';
 import { useAlertLog, useAlertMutations, useChannels, useRules } from '@/features/alerts/hooks';
 import { toChannel, toLogEntry, toRule } from '@/features/alerts/map';
 import { useI18n } from '@/i18n';
@@ -22,7 +22,7 @@ type Notice = { tone: 'success' | 'error' | 'warning'; text: string } | null;
 
 function Tile({ label, value, sub, tone }: { label: string; value: string; sub?: string; tone?: string }) {
   return (
-    <div className="flex flex-col gap-0.5 rounded-xl border border-line bg-surface px-5 py-4 shadow-card">
+    <div className="flex flex-col gap-1 border-b border-line px-6 py-5 last:border-0 sm:border-r sm:border-b-0">
       <span className="text-sm text-ink-muted">{label}</span>
       <span className="text-3xl leading-9 font-semibold tabular-nums">{value}</span>
       {sub ? <span className={cx('text-sm', tone ?? 'text-ink-muted')}>{sub}</span> : null}
@@ -42,6 +42,8 @@ function Alerts() {
   const rules = useMemo(() => (rulesQ.data?.items ?? []).map(toRule), [rulesQ.data]);
   const channels = useMemo(() => (channelsQ.data?.items ?? []).map(toChannel), [channelsQ.data]);
   const log = useMemo(() => (logQ.data?.items ?? []).map(toLogEntry), [logQ.data]);
+  const [search, setSearch] = useState('');
+  const [status, setStatus] = useState('all');
   const [tab, setTab] = useState<TabId>('rules');
   const [editingRule, setEditingRule] = useState<RuleDraft | null>(null);
   const [editingChannel, setEditingChannel] = useState<Channel | 'new' | null>(null);
@@ -58,7 +60,7 @@ function Alerts() {
 
   /* rules */
   const saveRule = (d: RuleDraft) => {
-    const body = { name: typeof d.name === 'string' ? d.name : d.name[lang], trigger: d.trigger, envs: d.envs, minRisk: d.minRisk, exposedOnly: d.exposedOnly, tag: d.tag, channelIds: d.channelIds, throttle: d.throttle, enabled: d.enabled };
+    const body = { name: typeof d.name === 'string' ? d.name : d.name[lang], trigger: d.trigger, assetIds: d.assetIds ?? [], envs: d.envs, minRisk: d.minRisk, exposedOnly: d.exposedOnly, tag: d.tag, channelIds: d.channelIds, throttle: d.throttle, enabled: d.enabled };
     const done = { onSuccess: () => { setEditingRule(null); setNotice({ tone: 'success', text: t('alerts.saved') }); }, onError: failed };
     if (d.id) m.updateRule.mutate({ id: d.id, ...body }, done);
     else m.createRule.mutate(body, done);
@@ -94,7 +96,7 @@ function Alerts() {
     });
   };
   const saveChannel = (kind: ChannelKind, name: string, values: Record<string, string>) => {
-    const done = { onSuccess: () => { setEditingChannel(null); setNotice({ tone: 'success', text: t('alerts.ch.saved') }); }, onError: failed };
+    const done = { onSuccess: (channel: { id: string }) => { setEditingChannel(null); setEditingRule((draft) => draft ? { ...draft, channelIds: [...new Set([...draft.channelIds, channel.id])] } : null); setNotice({ tone: 'success', text: t('alerts.ch.saved') }); }, onError: failed };
     if (editingChannel && editingChannel !== 'new') m.updateChannel.mutate({ id: editingChannel.id, name, values }, done);
     else m.createChannel.mutate({ kind, name, values }, done);
   };
@@ -103,16 +105,19 @@ function Alerts() {
     m.deleteChannel.mutate(c.id, { onSuccess: () => setEditingChannel(null), onError: failed });
   };
 
-  const actions = !canManage ? undefined :
-    tab === 'rules' ? <Button variant="primary" icon="plus" onClick={() => setEditingRule(newDraft())}>{t('alerts.rule.new')}</Button>
-    : tab === 'channels' ? <Button variant="primary" icon="plus" onClick={() => setEditingChannel('new')}>{t('alerts.ch.add')}</Button>
-    : undefined;
+  const visibleRules = rules.filter(r => (typeof r.name === 'string' ? r.name : r.name[lang]).toLocaleLowerCase(lang).includes(search.toLocaleLowerCase(lang)) && (status === 'all' || r.enabled === (status === 'active')));
+  const actions = canManage ? <><Button icon="link" onClick={() => setEditingChannel('new')}>{t('alerts.integration.add')}</Button><Button variant="primary" icon="plus" onClick={() => setEditingRule(newDraft())}>{t('alerts.rule.new')}</Button></> : undefined;
 
   return (
-    <div className="mx-auto flex w-full max-w-[1100px] min-w-0 grow flex-col gap-5 p-4 md:p-8">
+    <div className="mx-auto flex w-full max-w-[1400px] min-w-0 grow flex-col gap-5 p-4 md:p-8">
       <PageHeader title={t('alerts.title')} subtitle={t('alerts.subtitle')} actions={<>{demo ? <Tag tone="accent">{t('common.demoData')}</Tag> : null}{actions}</>} />
 
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+      <section className="overflow-hidden rounded-2xl border border-line bg-surface shadow-card">
+        <div className="grid gap-6 p-6 md:p-8 lg:grid-cols-[1fr_auto] lg:items-center">
+          <div className="max-w-2xl"><p className="mb-3 text-xs font-semibold tracking-[0.18em] text-accent">{t('alerts.design.eyebrow')}</p><h2 className="text-2xl font-semibold tracking-tight md:text-3xl">{t('alerts.design.heading')}</h2><p className="mt-3 max-w-xl text-sm leading-6 text-ink-muted">{t('alerts.design.intro')}</p></div>
+          <div aria-hidden="true" className="hidden items-center gap-3 lg:flex">{(['assets', 'bell', 'link'] as const).map((icon, i) => <div key={icon} className="flex items-center gap-3">{i > 0 ? <span className="h-px w-8 bg-line-strong" /> : null}<span className={cx('flex size-16 items-center justify-center rounded-2xl border', i === 1 ? 'border-accent/30 bg-accent-soft text-accent' : 'border-line bg-surface-2 text-ink-muted')}><Icon name={icon} size={25} /></span></div>)}</div>
+        </div>
+      <div className="grid grid-cols-1 border-t border-line bg-surface-2/40 sm:grid-cols-3">
         <Tile label={t('alerts.sum.rules')} value={`${enabledRules(rules)} / ${rules.length}`} />
         <Tile
           label={t('alerts.sum.channels')}
@@ -122,6 +127,7 @@ function Alerts() {
         />
         <Tile label={t('alerts.sum.today')} value={String(today)} />
       </div>
+      </section>
 
       {atRisk.length > 0 ? (
         <Banner
@@ -151,9 +157,11 @@ function Alerts() {
         <div className="rounded-xl border border-line bg-surface shadow-card"><LoadingRows /></div>
       ) : null}
 
-      {tab === 'rules' && rulesQ.isSuccess && channelsQ.isSuccess ? (
+      {tab === 'rules' ? <div className="flex flex-col gap-3 sm:flex-row sm:items-end"><div className="grow"><TextField label={t('alerts.design.search')} value={search} onChange={e => setSearch(e.target.value)} /></div><Select aria-label={t('alerts.design.all')} value={status} onChange={setStatus} options={[{value:'all',label:t('alerts.design.all')},{value:'active',label:t('alerts.design.active')},{value:'paused',label:t('alerts.rule.paused')}]} /></div> : null}
+      {tab === 'rules' && rulesQ.isSuccess && rules.length > 0 && !visibleRules.length ? <p className="rounded-xl border border-dashed border-line p-10 text-center text-ink-muted">{t('alerts.design.noResults')}</p> : null}
+      {tab === 'rules' && rulesQ.isSuccess && channelsQ.isSuccess && (visibleRules.length > 0 || rules.length === 0) ? (
         <RuleList
-          rules={rules}
+          rules={visibleRules}
           channels={channels}
           onToggle={(id, on) => m.updateRule.mutate({ id, enabled: on }, { onError: failed })}
           onEdit={(r) => canManage && setEditingRule({ ...r })}
@@ -165,13 +173,14 @@ function Alerts() {
       ) : null}
       {tab === 'log' && logQ.isSuccess ? <LogFeed log={log} rules={rules} channels={channels} /> : null}
 
-      {editingRule ? (
+      {editingRule && !editingChannel ? (
         <RuleDrawer
           key={editingRule.id ?? 'new'}
           initial={editingRule}
           isNew={!editingRule.id}
           channels={channels}
           saving={m.createRule.isPending || m.updateRule.isPending}
+          onAddChannel={(draft) => { setEditingRule(draft); setEditingChannel('new'); }}
           onSave={saveRule}
           onTest={testChannels}
           onDelete={editingRule.id ? () => deleteRule(editingRule) : undefined}
