@@ -1,5 +1,7 @@
 'use client';
 
+import { PAGE_CONTAINER } from '@/components/shell/page-layout';
+
 import Link from 'next/link';
 import { useMemo, useState, type FormEvent } from 'react';
 import { AdminHeader, Drawer, errorMessage } from '@/components/admin/admin-parts';
@@ -234,7 +236,7 @@ function UsersList() {
   const allCount = (active.data?.total ?? 0) + (disabled.data?.total ?? 0);
 
   return (
-    <div className="mx-auto flex w-full max-w-[1100px] min-w-0 grow flex-col gap-5 p-4 md:p-8">
+    <div className={PAGE_CONTAINER}>
       <AdminHeader actions={can(P.USER_CREATE) ? <Button variant="primary" icon="plus" onClick={() => setRegistering(true)}>{t('users.register')}</Button> : undefined} />
 
       <div className="grid grid-cols-3 gap-2 sm:gap-3">

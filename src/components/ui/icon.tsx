@@ -2,7 +2,7 @@ import type { SVGProps } from 'react';
 import {
   Boxes, Bell, Check, ChevronDown, ChevronUp, ChevronsUpDown, ClipboardList, Clock, Cloud, Container, Copy, Database, ExternalLink,
   Eye, EyeOff, FileText, Flame, Funnel, Globe, Inbox, Info, KeyRound, Laptop, LayoutDashboard, Link, LoaderCircle, Lock, LogOut,
-  Menu, Minus, Moon, Pencil, Plus, Radar, RefreshCw, Search, Server, Settings, Shield, Sun, Trash2, TriangleAlert, Users, X,
+  Menu, Minus, Moon, Pencil, Plus, RefreshCw, Search, Server, Settings, Shield, Sun, Trash2, TriangleAlert, Users, X,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -30,7 +30,6 @@ export const ICONS = {
   // navigation
   dashboard: LayoutDashboard,
   assets: Boxes,
-  intel: Radar,
   bell: Bell,
   report: FileText,
   users: Users,

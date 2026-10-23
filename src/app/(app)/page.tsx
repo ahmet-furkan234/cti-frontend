@@ -1,5 +1,7 @@
 'use client';
 
+import { PAGE_CONTAINER } from '@/components/shell/page-layout';
+
 import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/components/auth-provider';
@@ -18,7 +20,7 @@ import { overallHealth } from '@/lib/sync-health';
 import { useAge } from '@/lib/use-age';
 import type { SyncState } from '@/lib/types';
 
-const PAGE = 'mx-auto flex w-full max-w-[1200px] min-w-0 grow flex-col gap-5 p-4 md:p-8';
+const PAGE = PAGE_CONTAINER;
 
 function Panel({ title, sub, action, children, className }: { title: string; sub?: string; action?: React.ReactNode; children: React.ReactNode; className?: string }) {
   return (

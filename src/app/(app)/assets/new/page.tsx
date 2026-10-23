@@ -1,5 +1,7 @@
 'use client';
 
+import { PAGE_CONTAINER } from '@/components/shell/page-layout';
+
 import Link from 'next/link';
 import { useRef, useState } from 'react';
 import { AssetForm, emptyDraft, validate, type AssetDraft } from '@/components/assets/asset-form';
@@ -67,7 +69,7 @@ function NewAsset() {
 
   if (saved) {
     return (
-      <div className="mx-auto flex w-full max-w-[640px] grow flex-col items-center justify-center gap-5 p-8 text-center">
+      <div className={`${PAGE_CONTAINER} items-center justify-center text-center`}>
         <span className="inline-flex size-16 items-center justify-center rounded-full bg-low-soft text-low-ink">
           <Icon name="check" size={32} strokeWidth={2.25} />
         </span>
@@ -84,7 +86,7 @@ function NewAsset() {
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-[880px] min-w-0 grow flex-col gap-5 p-4 md:p-8">
+    <div className={PAGE_CONTAINER}>
       <nav className="text-sm text-ink-muted [&_a]:text-ink-muted [&_a:hover]:text-ink" aria-label="breadcrumb">
         <Link href="/assets">{t('assets.title')}</Link> / {t('assets.add')}
       </nav>

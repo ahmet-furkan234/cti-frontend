@@ -1,5 +1,7 @@
 'use client';
 
+import { PAGE_CONTAINER } from '@/components/shell/page-layout';
+
 import Link from 'next/link';
 import { useMemo, useState } from 'react';
 import { PageHeader, RequirePermission } from '@/components/shell/page-guard';
@@ -108,7 +110,7 @@ function Assets() {
   const tabCount = (id: AssetTab) => stats?.tabs[id] ?? 0;
 
   return (
-    <div className="mx-auto flex w-full max-w-[1100px] min-w-0 grow flex-col gap-5 p-4 md:p-8">
+    <div className={PAGE_CONTAINER}>
       <PageHeader
         title={t('assets.title')}
         subtitle={stats ? t('assets.subtitle', { total: formatNumber(total, locale), active: formatNumber(stats.active, locale), stale: formatNumber(stats.stale, locale), archived: formatNumber(stats.archived, locale) }) : undefined}

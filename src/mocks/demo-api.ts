@@ -1,12 +1,11 @@
 import type {
-  AlertLogDto, AssetDto, AssetListResponse, ChannelDto, CveAssetDto, CveAssetsResponse, ImportRecordDto, IocDto, IocListResponse, ReportRunDto,
-  ReportScheduleDto, RuleDto, VulnDto, WatchlistDto,
+  AlertLogDto, AssetDto, AssetListResponse, ChannelDto, CveAssetDto, CveAssetsResponse, ImportRecordDto, ReportRunDto,
+  ReportScheduleDto, RuleDto, VulnDto,
 } from '../lib/types';
 import { CHANNELS, NOTIFICATION_LOG, RULES } from './alerts';
 import { ASSET_TYPE_TABS, ASSET_ROWS, EXPOSURE, TAB_TYPES } from './assets';
 import { CVE_ASSET_ROWS, CVE_ASSET_STATS } from './cve-assets';
 import { IMPORT_HISTORY } from './import';
-import { IOCS, WATCHLISTS } from './intel';
 import { REPORT_RUNS, REPORT_SCHEDULES } from './reports';
 import { VULN_ROWS, riskOf } from './vulns';
 
@@ -65,12 +64,6 @@ const rules = (): RuleDto[] =>
   RULES.map((r) => ({ id: r.id, name: bi(r.name), trigger: r.trigger, envs: r.envs, minRisk: r.minRisk, exposedOnly: r.exposedOnly, tag: r.tag, channelIds: r.channelIds, throttle: r.throttle, enabled: r.enabled, lastFiredAt: r.lastFiredMin == null ? null : ago(r.lastFiredMin), fired30: r.fired30 }));
 const alertLog = (): AlertLogDto[] => NOTIFICATION_LOG.map((e) => ({ id: e.id, ruleId: e.ruleId, channelIds: e.channelIds, result: e.result, detail: e.detail.tr, at: ago(e.min) }));
 
-const watchlists = (): WatchlistDto[] => WATCHLISTS.map((w) => ({ ...w }));
-const iocs = (): IocListResponse => {
-  const items: IocDto[] = IOCS.map((i) => ({ id: i.id, type: i.type, value: i.value, source: i.source, confidence: i.confidence, expiresAt: i.expires ? `${i.expires}T00:00:00.000Z` : null, matches: i.matches }));
-  return { items, total: items.length, active: 18_442, expiring: 3 };
-};
-
 const runs = (): ReportRunDto[] =>
   REPORT_RUNS.map((r) => ({ id: r.id, scheduleId: null, template: r.template, scope: r.scope ?? null, formats: ['csv'], status: r.status, manual: !!r.manual, sizeBytes: r.status === 'ready' ? 412_000 : null, error: null, createdAt: ago(r.min) }));
 const schedules = (): ReportScheduleDto[] => REPORT_SCHEDULES.map((s) => ({ id: s.id, template: s.template, scope: s.scope ?? null, freq: s.freq, recipients: s.recipients, formats: ['csv'], enabled: s.enabled }));
@@ -93,11 +86,6 @@ export function mockDemoRead(path: string, query: Query = {}): unknown {
   if (path === '/alerts/channels') return { items: channels() };
   if (path === '/alerts/rules') return { items: rules() };
   if (path === '/alerts/log') return { items: alertLog() };
-  if (path === '/intel/watchlists') return { items: watchlists() };
-  if (path === '/intel/iocs') return iocs();
-  if (path === '/intel/findings') return { items: [], total: 0 };
-  if (path === '/intel/new-kev') return { items: [] };
-  if (/^\/intel\/iocs\/[^/]+\/assets$/.test(path)) return { items: [] };
   if (path === '/reports/runs') return { items: runs() };
   if (path === '/reports/schedules') return { items: schedules() };
   return undefined;

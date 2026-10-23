@@ -1,5 +1,7 @@
 'use client';
 
+import { PAGE_CONTAINER } from '@/components/shell/page-layout';
+
 import { useSearchParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { Suspense, useEffect, useMemo, useRef, useState } from 'react';
@@ -118,7 +120,7 @@ function Explorer() {
   const needsVendor = !!product && !vendor;
 
   return (
-    <div className="mx-auto flex w-full max-w-[1100px] min-w-0 grow flex-col gap-5 p-4 md:p-8">
+    <div className={PAGE_CONTAINER}>
       <PageHeader
         title={t('cves.title')}
         subtitle={

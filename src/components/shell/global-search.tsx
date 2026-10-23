@@ -11,10 +11,10 @@ import { api } from '@/lib/api';
 import { isLocalSession } from '@/lib/local-auth';
 import { PERMISSIONS as P } from '@/lib/permissions';
 import { useDebounced } from '@/lib/use-debounced';
-import type { AssetListResponse, CveSearchResponse, RuleDto, Role, UserListResponse, WatchlistDto } from '@/lib/types';
+import type { AssetListResponse, CveSearchResponse, RuleDto, Role, UserListResponse } from '@/lib/types';
 import { ADMIN, MAIN } from './sidebar';
 
-type Group = 'pages' | 'assets' | 'users' | 'cves' | 'rules' | 'watchlists' | 'roles';
+type Group = 'pages' | 'assets' | 'users' | 'cves' | 'rules' | 'roles';
 interface Hit {
   key: string;
   group: Group;
@@ -28,7 +28,7 @@ interface Hit {
 
 const GROUP_LABEL: Record<Group, MessageKey> = {
   pages: 'search.g.pages', assets: 'search.g.assets', users: 'search.g.users', cves: 'search.g.cves',
-  rules: 'search.g.rules', watchlists: 'search.g.watchlists', roles: 'search.g.roles',
+  rules: 'search.g.rules', roles: 'search.g.roles',
 };
 const MIN_CHARS = 2;
 const PER_GROUP = 5;
@@ -64,7 +64,6 @@ export function GlobalSearch() {
   });
   // Short lists that are filtered here; they share the cache with the pages that show them.
   const rules = useQuery({ queryKey: ['alert-rules'], enabled: live(can(P.ALERT_READ)), queryFn: () => api<{ items: RuleDto[] }>('/alerts/rules') });
-  const watchlists = useQuery({ queryKey: ['watchlists'], enabled: live(can(P.INTEL_READ)), queryFn: () => api<{ items: WatchlistDto[] }>('/intel/watchlists') });
   const roles = useQuery({ queryKey: ['roles'], enabled: live(can(P.ROLE_READ)), queryFn: () => api<Role[]>('/roles') });
 
   const hits = useMemo<Hit[]>(() => {
@@ -86,14 +85,11 @@ export function GlobalSearch() {
     for (const r of (rules.data?.items ?? []).filter((x) => has(x.name, lower)).slice(0, PER_GROUP)) {
       out.push({ key: `r-${r.id}`, group: 'rules', icon: 'bell', title: r.name, href: '/alerts' });
     }
-    for (const w of (watchlists.data?.items ?? []).filter((x) => has(x.name, lower) || x.vendors.some((v) => has(v, lower)) || x.products.some((v) => has(v, lower))).slice(0, PER_GROUP)) {
-      out.push({ key: `w-${w.id}`, group: 'watchlists', icon: 'intel', title: w.name, href: '/intel' });
-    }
     for (const r of (roles.data ?? []).filter((x) => has(x.name, lower) || has(x.description, lower)).slice(0, PER_GROUP)) {
       out.push({ key: `ro-${r.id}`, group: 'roles', icon: 'shield', title: r.name, sub: r.description || undefined, href: '/admin/roles' });
     }
     return out;
-  }, [term, lower, can, t, assets.data, users.data, cves.data, rules.data, watchlists.data, roles.data]);
+  }, [term, lower, can, t, assets.data, users.data, cves.data, rules.data, roles.data]);
 
   const loading = searching && [assets, users, cves].some((x) => x.isFetching);
   useEffect(() => setActive(0), [term]);

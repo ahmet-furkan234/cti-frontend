@@ -1,5 +1,7 @@
 'use client';
 
+import { PAGE_CONTAINER } from '@/components/shell/page-layout';
+
 import { useState } from 'react';
 import { errorMessage } from '@/components/admin/admin-parts';
 import { SyncProgressPanel, SyncRowProgress } from '@/components/admin/sync-progress';
@@ -52,14 +54,14 @@ function SyncView() {
 
   if (isError) {
     return (
-      <div className="mx-auto flex w-full max-w-[1440px] min-w-0 grow flex-col gap-5 p-4 md:p-8"><div className="min-w-0 rounded-xl border border-line bg-surface shadow-card">
+      <div className={PAGE_CONTAINER}><div className="min-w-0 rounded-xl border border-line bg-surface shadow-card">
         <StateBlock kind="error" title={t('common.loadError')} description={t('common.tryAgainLater')} action={<Button onClick={() => void refetch()}>{t('common.retry')}</Button>} />
       </div></div>
     );
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-[1440px] min-w-0 grow flex-col gap-5 p-4 md:p-8">
+    <div className={PAGE_CONTAINER}>
       <PageHeader
         title={t('sync.title')}
         subtitle={data ? t('sync.subtitle', { n: states.length, time: lastSuccess ? formatDateTime(lastSuccess) : '—' }) : <Skeleton width={260} height={14} />}

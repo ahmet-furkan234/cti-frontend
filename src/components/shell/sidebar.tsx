@@ -25,7 +25,6 @@ export const MAIN: NavEntry[] = [
   { id: 'cves', href: '/cves', icon: 'search', label: 'nav.cves', needs: [P.CVE_READ] },
   { id: 'assets', href: '/assets', icon: 'assets', label: 'nav.assets', needs: [P.ASSET_READ] },
   { id: 'vulns', href: '/vulns', icon: 'alert', label: 'nav.vulns', needs: [P.VULN_READ] },
-  { id: 'intel', href: '/intel', icon: 'intel', label: 'nav.intel', needs: [P.INTEL_READ] },
   { id: 'alerts', href: '/alerts', icon: 'bell', label: 'nav.alerts', needs: [P.ALERT_READ] },
   { id: 'reports', href: '/reports', icon: 'report', label: 'nav.reports', needs: [P.REPORT_READ] },
   { id: 'settings', href: '/admin/settings', icon: 'settings', label: 'nav.settings' },

@@ -1,5 +1,7 @@
 'use client';
 
+import { PAGE_CONTAINER } from '@/components/shell/page-layout';
+
 import Link from 'next/link';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, type ReactNode } from 'react';
@@ -54,7 +56,7 @@ function CveDetailView() {
 
   if (error instanceof ApiError && error.status === 404) {
     return (
-      <div className="mx-auto flex w-full max-w-[1440px] min-w-0 grow flex-col gap-5 p-4 md:p-8">
+      <div className={PAGE_CONTAINER}>
         <div className="min-w-0 rounded-xl border border-line bg-surface shadow-card">
           <StateBlock
             kind="no-results"
@@ -69,7 +71,7 @@ function CveDetailView() {
   }
   if (error) {
     return (
-      <div className="mx-auto flex w-full max-w-[1440px] min-w-0 grow flex-col gap-5 p-4 md:p-8">
+      <div className={PAGE_CONTAINER}>
         <div className="min-w-0 rounded-xl border border-line bg-surface shadow-card">
           <StateBlock kind="error" title={t('common.loadError')} description={t('common.tryAgainLater')} action={<Button onClick={() => void refetch()}>{t('common.retry')}</Button>} />
         </div>
@@ -90,7 +92,7 @@ function CveDetailView() {
   ];
 
   return (
-    <div className="mx-auto flex w-full max-w-[1440px] min-w-0 grow flex-col p-4 md:p-8 gap-4! md:px-8! md:py-6!">
+    <div className={PAGE_CONTAINER}>
       <nav aria-label={t('cve.breadcrumb')} className="text-sm text-ink-muted [&_a]:text-ink-muted [&_a:hover]:text-ink">
         <Link href="/cves">{t('cves.title')}</Link> / <span className="font-mono">{cve.id}</span>
       </nav>

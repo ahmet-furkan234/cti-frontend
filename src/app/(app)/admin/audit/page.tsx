@@ -1,5 +1,7 @@
 'use client';
 
+import { PAGE_CONTAINER } from '@/components/shell/page-layout';
+
 import { useMemo, useState } from 'react';
 import { AuditFeed } from '@/components/admin/audit-feed';
 import { AuditFilterPanel } from '@/components/admin/audit-filter-panel';
@@ -63,7 +65,7 @@ function AuditView() {
   const reset = () => { setAction(''); setRange('all'); setCustom({ from: '', to: '' }); setCategory('all'); setQ(''); };
 
   return (
-    <div className="mx-auto flex w-full max-w-[1100px] min-w-0 grow flex-col gap-5 p-4 md:p-8">
+    <div className={PAGE_CONTAINER}>
       <PageHeader
         title={t('audit.title')}
         subtitle={t('auditlog.subtitle')}

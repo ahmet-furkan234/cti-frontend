@@ -181,7 +181,6 @@ export const admin = defineMessages({
   'mod.asset': { tr: 'Varlıklar', en: 'Assets' },
   'mod.vuln': { tr: 'Zafiyetler', en: 'Vulnerabilities' },
   'mod.alert': { tr: 'Uyarılar', en: 'Alerts' },
-  'mod.intel': { tr: 'Tehdit istihbaratı', en: 'Threat intelligence' },
   'mod.report': { tr: 'Raporlar', en: 'Reports' },
 
   // permission catalog descriptions (backend seeds English text; the UI localizes known keys)
@@ -345,7 +344,6 @@ export const admin = defineMessages({
   'moddesc.asset': { tr: 'Envanter ve içe aktarma', en: 'Inventory and import' },
   'moddesc.vuln': { tr: 'Varlıklarda bulunan zafiyetler', en: 'Vulnerabilities found on assets' },
   'moddesc.alert': { tr: 'Uyarı kuralları ve bildirim kanalları', en: 'Alert rules and notification channels' },
-  'moddesc.intel': { tr: 'İzleme listeleri ve göstergeler', en: 'Watchlists and indicators' },
   'moddesc.report': { tr: 'Rapor oluşturma ve zamanlama', en: 'Creating and scheduling reports' },
   'permlabel.cve:read': { tr: 'Görüntüle', en: 'View' },
   'permlabel.dashboard:view': { tr: 'Görüntüle', en: 'View' },
@@ -367,8 +365,6 @@ export const admin = defineMessages({
   'permlabel.vuln:update': { tr: 'Durum değiştir', en: 'Change status' },
   'permlabel.alert:read': { tr: 'Görüntüle', en: 'View' },
   'permlabel.alert:manage': { tr: 'Yönet', en: 'Manage' },
-  'permlabel.intel:read': { tr: 'Görüntüle', en: 'View' },
-  'permlabel.intel:manage': { tr: 'Yönet', en: 'Manage' },
   'permlabel.report:read': { tr: 'Görüntüle', en: 'View' },
   'permlabel.report:manage': { tr: 'Oluştur ve zamanla', en: 'Create and schedule' },
   'rolename.super_admin': { tr: 'Süper yönetici', en: 'Super admin' },

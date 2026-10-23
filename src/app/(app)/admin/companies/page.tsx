@@ -1,5 +1,7 @@
 'use client';
 
+import { PAGE_CONTAINER } from '@/components/shell/page-layout';
+
 import { useState, type FormEvent } from 'react';
 import { OptionalFields } from '@/components/forms/optional-fields';
 import { Drawer, errorMessage } from '@/components/admin/admin-parts';
@@ -12,7 +14,7 @@ import { ApiError } from '@/lib/api';
 import { PERMISSIONS as P } from '@/lib/permissions';
 import type { CompanyListItem, CreateCompanyResult } from '@/lib/types';
 
-const PAGE = 'mx-auto flex w-full max-w-[1100px] min-w-0 grow flex-col gap-5 p-4 md:p-8';
+const PAGE = PAGE_CONTAINER;
 
 function CreateDrawer({ onClose }: { onClose: () => void }) {
   const { t } = useI18n();

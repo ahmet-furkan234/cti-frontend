@@ -1,6 +1,8 @@
 import { defineMessages } from '../define';
 
 export const alerts = defineMessages({
+  'alerts.assets.clear': { tr: 'Seçimi temizle', en: 'Clear selection' },
+  'alerts.assets.limit': { tr: 'En fazla 500 varlık seçebilirsiniz.', en: 'You can select up to 500 assets.' },
   'alerts.design.eyebrow': { tr: 'BİLDİRİM MERKEZİ', en: 'NOTIFICATION CENTER' },
   'alerts.design.heading': { tr: 'Tehditleri izleyin. Ekibinizi haberdar edin.', en: 'Monitor threats. Keep your team informed.' },
   'alerts.design.intro': { tr: 'Varlıklarınızı seçin, alarm koşulunu belirleyin ve bildirimlerin ulaşacağı kanalları bağlayın.', en: 'Choose assets, define a trigger, and connect the channels that receive notifications.' },

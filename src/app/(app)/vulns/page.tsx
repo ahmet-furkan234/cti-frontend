@@ -1,5 +1,7 @@
 'use client';
 
+import { PAGE_CONTAINER } from '@/components/shell/page-layout';
+
 import Link from 'next/link';
 import { useMemo, useState } from 'react';
 import { PageHeader, RequirePermission } from '@/components/shell/page-guard';
@@ -177,7 +179,7 @@ function Vulns() {
   };
 
   return (
-    <div className="mx-auto flex w-full max-w-[1600px] min-w-0 grow flex-col gap-4 p-4 lg:p-6">
+    <div className={PAGE_CONTAINER}>
       <PageHeader title={t('vulns.title')} subtitle={t('vulns.subtitle')} actions={<>{demo ? <Tag tone="accent">{t('common.demoData')}</Tag> : null}<Button size="sm" disabled={query.isFetching} onClick={() => void query.refetch()}>{t('vulns.refresh')}</Button></>} />
 
       <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">

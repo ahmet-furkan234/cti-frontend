@@ -1,5 +1,7 @@
 'use client';
 
+import { PAGE_CONTAINER } from '@/components/shell/page-layout';
+
 import { useMemo, useState } from 'react';
 import { useAuth } from '@/components/auth-provider';
 import { PageHeader, RequirePermission } from '@/components/shell/page-guard';
@@ -149,7 +151,7 @@ function Reports() {
   const errored = tab === 'recent' ? runsQ.isError : schedulesQ.isError;
 
   return (
-    <div className="mx-auto flex w-full max-w-[1100px] min-w-0 grow flex-col gap-6 p-4 md:p-8">
+    <div className={PAGE_CONTAINER}>
       <PageHeader title={t('reports.title')} subtitle={t('reports.subtitle')} actions={demo ? <Tag tone="accent">{t('common.demoData')}</Tag> : undefined} />
 
       <section aria-label={t('reports.templates')} className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">

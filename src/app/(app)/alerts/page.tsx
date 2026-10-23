@@ -1,5 +1,7 @@
 'use client';
 
+import { PAGE_CONTAINER } from '@/components/shell/page-layout';
+
 import { useMemo, useState } from 'react';
 import { ChannelDrawer, ChannelGrid } from '@/components/alerts/channels';
 import { LogFeed } from '@/components/alerts/log';
@@ -109,7 +111,7 @@ function Alerts() {
   const actions = canManage ? <><Button icon="link" onClick={() => setEditingChannel('new')}>{t('alerts.integration.add')}</Button><Button variant="primary" icon="plus" onClick={() => setEditingRule(newDraft())}>{t('alerts.rule.new')}</Button></> : undefined;
 
   return (
-    <div className="mx-auto flex w-full max-w-[1400px] min-w-0 grow flex-col gap-5 p-4 md:p-8">
+    <div className={PAGE_CONTAINER}>
       <PageHeader title={t('alerts.title')} subtitle={t('alerts.subtitle')} actions={<>{demo ? <Tag tone="accent">{t('common.demoData')}</Tag> : null}{actions}</>} />
 
       <section className="overflow-hidden rounded-2xl border border-line bg-surface shadow-card">

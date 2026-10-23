@@ -9,11 +9,10 @@ import { companies } from './companies';
 import { cves } from './cves';
 import { cvssVector } from './cvss-vector';
 import { dashboard } from './dashboard';
-import { intel } from './intel';
 import { demo } from './demo';
 import { reports } from './reports';
 import { shell } from './shell';
 import { vulns } from './vulns';
 
-export const MESSAGES = { ...common, ...shell, ...auth, ...cves, ...dashboard, ...admin, ...demo, ...assetTypes, ...alerts, ...intel, ...assets, ...vulns, ...reports, ...auditlog, ...companies, ...cvssVector };
+export const MESSAGES = { ...common, ...shell, ...auth, ...cves, ...dashboard, ...admin, ...demo, ...assetTypes, ...alerts, ...assets, ...vulns, ...reports, ...auditlog, ...companies, ...cvssVector };
 export type MessageKey = keyof typeof MESSAGES;

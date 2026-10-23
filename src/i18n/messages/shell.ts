@@ -11,7 +11,6 @@ export const shell = defineMessages({
   "nav.cves": { tr: "CVE Explorer", en: "CVE Explorer" },
   "nav.assets": { tr: "Varlıklar", en: "Assets" },
   "nav.vulns": { tr: "Zafiyetler", en: "Vulnerabilities" },
-  "nav.intel": { tr: "Tehdit istihbaratı", en: "Threat intelligence" },
   "nav.alerts": { tr: "Alarmlar", en: "Alerts" },
   "nav.reports": { tr: "Raporlar", en: "Reports" },
   "nav.admin": { tr: "Yönetim", en: "Administration" },
@@ -33,7 +32,6 @@ export const shell = defineMessages({
   "search.g.users": { tr: "Kullanıcılar", en: "People" },
   "search.g.cves": { tr: "CVE kayıtları", en: "CVE records" },
   "search.g.rules": { tr: "Uyarı kuralları", en: "Alert rules" },
-  "search.g.watchlists": { tr: "İzleme listeleri", en: "Watchlists" },
   "search.g.roles": { tr: "Roller", en: "Roles" },
   "search.edit": { tr: "Düzenle", en: "Edit" },
   "search.empty": {

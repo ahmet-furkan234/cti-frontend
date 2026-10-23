@@ -12,7 +12,7 @@ import '@/styles/globals.css';
 
 export const metadata: Metadata = {
   title: { default: 'CTI Web', template: '%s · CTI Web' },
-  description: 'Cyber threat intelligence and vulnerability management',
+  description: 'Asset security and vulnerability management',
 };
 
 export default async function RootLayout({ children }: { children: ReactNode }) {

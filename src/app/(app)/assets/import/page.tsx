@@ -1,5 +1,7 @@
 'use client';
 
+import { PAGE_CONTAINER } from '@/components/shell/page-layout';
+
 import Link from 'next/link';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Stepper } from '@/components/assets/stepper';
@@ -357,7 +359,7 @@ function ImportWizard() {
   const importable = check ? check.totals.created + check.totals.updated : 0;
 
   return (
-    <div className="mx-auto flex w-full max-w-[880px] min-w-0 grow flex-col gap-4 p-4 md:p-8">
+    <div className={PAGE_CONTAINER}>
       <nav className="text-sm text-ink-muted [&_a]:text-ink-muted [&_a:hover]:text-ink" aria-label="breadcrumb">
         <Link href="/assets">{t('assets.title')}</Link> / {t('import.breadcrumb')}
       </nav>

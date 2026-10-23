@@ -1,5 +1,7 @@
 'use client';
 
+import { PAGE_CONTAINER } from '@/components/shell/page-layout';
+
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
@@ -47,7 +49,7 @@ function EditAsset() {
   if (query.isError) {
     const gone = query.error instanceof ApiError && query.error.status === 404;
     return (
-      <div className="mx-auto w-full max-w-[1100px] p-4 md:p-8">
+      <div className={PAGE_CONTAINER}>
         <div className="rounded-xl border border-line bg-surface shadow-card">
           {gone ? (
             <StateBlock kind="empty" title={t('assets.edit.gone')} action={<Link href="/assets" className={buttonClass()}>{t('asset.saved.list')}</Link>} />
@@ -59,7 +61,7 @@ function EditAsset() {
     );
   }
   if (!query.data || !draft) {
-    return <div className="mx-auto w-full max-w-[1100px] p-4 md:p-8"><div className="rounded-xl border border-line bg-surface shadow-card"><LoadingRows /></div></div>;
+    return <div className={PAGE_CONTAINER}><div className="rounded-xl border border-line bg-surface shadow-card"><LoadingRows /></div></div>;
   }
   const asset = query.data;
   const archived = asset.status === 'archived';
@@ -82,7 +84,7 @@ function EditAsset() {
   };
 
   return (
-    <div className="mx-auto flex w-full max-w-[1100px] min-w-0 grow flex-col gap-5 p-4 md:p-8">
+    <div className={PAGE_CONTAINER}>
       <nav className="text-sm text-ink-muted [&_a]:text-ink-muted [&_a:hover]:text-ink" aria-label="breadcrumb">
         <Link href="/assets">{t('assets.title')}</Link> / {asset.name}
       </nav>

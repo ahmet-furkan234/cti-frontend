@@ -1,5 +1,7 @@
 'use client';
 
+import { PAGE_CONTAINER } from '@/components/shell/page-layout';
+
 import { useState } from 'react';
 import { useAuth } from '@/components/auth-provider';
 import { SoftwareCombobox } from '@/components/assets/software-combobox';
@@ -113,7 +115,7 @@ export default function SettingsPage() {
   const current = tab === 'system' && !showSystem ? 'preferences' : tab;
 
   return (
-    <div className="mx-auto flex w-full max-w-[1440px] min-w-0 grow flex-col gap-5 p-4 md:p-8">
+    <div className={PAGE_CONTAINER}>
       <PageHeader title={t('settings.title')} subtitle={t('settings.subtitle')} />
       <Tabs label={t('settings.title')} items={tabs} value={current} onChange={(v) => setTab(v as TabId)} />
       {current === 'preferences' ? <Preferences /> : null}

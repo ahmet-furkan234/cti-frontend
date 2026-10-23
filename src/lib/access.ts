@@ -20,7 +20,6 @@ const AREA_ICON: Record<string, IconName> = {
   asset: 'assets',
   vuln: 'alert',
   alert: 'bell',
-  intel: 'intel',
   report: 'report',
   company: 'shield',
 };

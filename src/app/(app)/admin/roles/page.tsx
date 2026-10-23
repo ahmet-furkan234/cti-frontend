@@ -1,5 +1,7 @@
 'use client';
 
+import { PAGE_CONTAINER } from '@/components/shell/page-layout';
+
 import { useEffect, useMemo, useState } from 'react';
 import { AdminHeader, Drawer, errorMessage } from '@/components/admin/admin-parts';
 import { OptionalFields } from '@/components/forms/optional-fields';
@@ -154,7 +156,7 @@ function RolesView() {
   const open = openId && openId !== NEW ? (list.find((r) => r.id === openId) ?? null) : null;
 
   return (
-    <div className="mx-auto flex w-full max-w-[1100px] min-w-0 grow flex-col gap-5 p-4 md:p-8">
+    <div className={PAGE_CONTAINER}>
       <AdminHeader subtitle={t('roles.subtitle')} actions={can(P.ROLE_MANAGE) ? <Button variant="primary" icon="plus" onClick={() => setOpenId(NEW)}>{t('roles.new')}</Button> : undefined} />
       {roles.isError || catalog.isError ? (
         <div className="min-w-0 rounded-xl border border-line bg-surface shadow-card"><StateBlock kind="error" title={t('common.loadError')} description={t('common.tryAgainLater')} /></div>

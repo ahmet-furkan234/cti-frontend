@@ -164,9 +164,9 @@ export function RuleDrawer({
     >
       <form id="rule-form" onSubmit={(e) => { e.preventDefault(); save(); }} className="flex flex-col gap-4">
         <Step n={1} title={t('alerts.assets.title')}>
-          {usesAssets ? <div className="flex flex-col gap-3 rounded-xl border border-line bg-surface-2/40 p-4">
-            <div className="flex gap-2">
-              {(['selected', 'all'] as const).map((mode) => <Button key={mode} variant={scope === mode ? 'primary' : 'ghost'} aria-pressed={scope === mode} onClick={() => setScope(mode)}>{t(mode === 'all' ? 'alerts.assets.all' : 'alerts.assets.choose')}</Button>)}
+          {usesAssets ? <div className="flex min-w-0 flex-col gap-4">
+            <div className="grid grid-cols-2 gap-1 rounded-lg bg-surface-2 p-1">
+              {(['selected', 'all'] as const).map((mode) => <button key={mode} type="button" className={cx('flex items-center justify-center gap-2 rounded-md px-2 py-2.5 text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-accent', scope === mode ? 'bg-surface text-ink shadow-sm' : 'text-ink-muted hover:text-ink')} aria-pressed={scope === mode} onClick={() => setScope(mode)}><Icon name={mode === 'all' ? 'globe' : 'assets'} size={15} />{t(mode === 'all' ? 'alerts.assets.all' : 'alerts.assets.choose')}</button>)}
             </div>
             {scope === 'selected' ? <AlertAssetPicker value={d.assetIds ?? []} onChange={(ids) => set('assetIds', ids)} /> : <p className="text-sm text-ink-muted">{t('alerts.scope.all')}</p>}
             {showErrors && errors.assets ? <p role="alert" className="text-sm text-critical-ink">{t('alerts.assets.required')}</p> : null}

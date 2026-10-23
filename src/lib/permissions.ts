@@ -20,8 +20,6 @@ export const PERMISSIONS = {
   VULN_UPDATE: 'vuln:update',
   ALERT_READ: 'alert:read',
   ALERT_MANAGE: 'alert:manage',
-  INTEL_READ: 'intel:read',
-  INTEL_MANAGE: 'intel:manage',
   REPORT_READ: 'report:read',
   REPORT_MANAGE: 'report:manage',
   COMPANY_READ: 'company:read',
