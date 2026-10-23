@@ -1,6 +1,16 @@
 import { defineMessages } from '../define';
 
 export const common = defineMessages({
+  'form.account': { tr: 'Hesap bilgileri', en: 'Account details' },
+  'form.permissions.count': { tr: '{n} yetki seçili', en: '{n} permissions selected' },
+  'form.optional': { tr: 'İsteğe bağlı bilgiler', en: 'Optional details' },
+  'form.advanced': { tr: 'Gelişmiş ayarlar', en: 'Advanced settings' },
+  'form.permissions.search': { tr: 'Modül veya yetki ara', en: 'Search modules or permissions' },
+  'form.permissions.none': { tr: 'Eşleşen modül veya yetki yok.', en: 'No matching modules or permissions.' },
+  'form.review': { tr: 'Kontrol et ve oluştur', en: 'Review and create' },
+  'form.channels.empty': { tr: 'Önce Kanallar sekmesinden bir bildirim kanalı ekleyin.', en: 'Add a notification channel in the Channels tab first.' },
+  'form.ioc.types': { tr: 'Desteklenen türler', en: 'Supported types' },
+
   // severity
   'sev.critical': { tr: 'Kritik', en: 'Critical' },
   'sev.high': { tr: 'Yüksek', en: 'High' },

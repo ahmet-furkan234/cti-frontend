@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import type { ReactNode } from 'react';
-import { Skeleton, StateBlock, buttonClass } from '@/components/ui';
+import { LoadingBlock, StateBlock, buttonClass } from '@/components/ui';
 import { useT } from '@/i18n';
 import { api } from '@/lib/api';
 
@@ -40,7 +40,7 @@ export function TokenGate({
   if (isPending || !data) {
     return (
       <div className="flex w-full max-w-[420px] flex-col gap-5 rounded-2xl border border-line bg-surface p-8 shadow-card">
-        <Skeleton lines={3} height={12} />
+        <LoadingBlock className="min-h-[160px]" />
       </div>
     );
   }

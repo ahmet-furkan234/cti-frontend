@@ -1,10 +1,11 @@
 'use client';
 
 import { useState, type FormEvent } from 'react';
+import { OptionalFields } from '@/components/forms/optional-fields';
 import { Drawer, errorMessage } from '@/components/admin/admin-parts';
 import { useAuth } from '@/components/auth-provider';
 import { PageHeader, RequirePermission } from '@/components/shell/page-guard';
-import { Banner, Button, MonoText, Skeleton, StateBlock, StatusPill, Tag, TextField } from '@/components/ui';
+import { Banner, Button, MonoText, LoadingBlock, StateBlock, StatusPill, Tag, TextField } from '@/components/ui';
 import { useCompanies, useCompanyMutations } from '@/features/companies/hooks';
 import { useI18n } from '@/i18n';
 import { ApiError } from '@/lib/api';
@@ -22,7 +23,7 @@ function CreateDrawer({ onClose }: { onClose: () => void }) {
 
   const submit = (e: FormEvent) => {
     e.preventDefault();
-    if (!name.trim()) return;
+    if (!name.trim() || create.isPending) return;
     create.mutate({ name: name.trim(), ...(adminEmail.trim() ? { adminEmail: adminEmail.trim() } : {}) }, { onSuccess: setResult });
   };
   const error = create.error
@@ -66,7 +67,9 @@ function CreateDrawer({ onClose }: { onClose: () => void }) {
           <p className="text-[15px] text-ink-muted">{t('companies.add.desc')}</p>
           {error ? <Banner tone="error">{error}</Banner> : null}
           <TextField label={t('companies.f.name')} value={name} onChange={(e) => setName(e.target.value)} required autoFocus />
+          <OptionalFields title={t('companies.f.admin')} description={t('form.optional')} invalid={!!adminEmail.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(adminEmail.trim())}>
           <TextField label={t('companies.f.admin')} hint={t('companies.f.admin.hint')} type="email" value={adminEmail} onChange={(e) => setAdminEmail(e.target.value)} />
+          </OptionalFields>
         </form>
       )}
     </Drawer>
@@ -137,7 +140,7 @@ function Companies() {
         </div>
       ) : (
         <section className="min-w-0 overflow-hidden rounded-xl border border-line bg-surface shadow-card" aria-busy={isPending}>
-          {isPending ? Array.from({ length: 3 }, (_, i) => <div key={i} className="border-b border-line px-5 py-5 last:border-b-0"><Skeleton lines={2} height={12} /></div>) : null}
+          {isPending ? <LoadingBlock /> : null}
           {items.map((c) => (
             <div key={c.id} className="flex flex-col gap-3 border-b border-line px-5 py-4 last:border-b-0 md:flex-row md:items-center">
               <div className="flex min-w-0 grow flex-col gap-1">

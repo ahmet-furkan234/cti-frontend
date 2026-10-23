@@ -145,7 +145,7 @@ function NewKev({ days }: { days: number }) {
   return (
     <Panel title={t('intel.dash.kev')} desc={t('intel.dash.kev.desc', { n: days })} {...(q.data ? { count: items.length } : {})}>
       {q.isError ? <LoadError onRetry={() => void q.refetch()} />
-        : q.isPending ? <LoadingRows rows={2} />
+        : q.isPending ? <LoadingRows />
         : items.length === 0 ? <StateBlock kind="empty" compact title={t('intel.dash.kev.none', { n: days })} />
         : <ul className="m-0 list-none p-0">{items.map((k) => <KevRow key={k.cve} k={k} />)}</ul>}
     </Panel>

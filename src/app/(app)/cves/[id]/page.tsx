@@ -9,7 +9,7 @@ import { VectorTab } from '@/components/cves/vector-tab';
 import {
   buildTimeline, CweCard, EpssCard, ProductsTable, ReferencesSummary, Section, TimelineList,
 } from '@/components/cves/detail-parts';
-import { Banner, Button, KevFlag, SeverityBadge, Skeleton, StateBlock, Tabs, buttonClass } from '@/components/ui';
+import { Banner, Button, KevFlag, SeverityBadge, PageLoading, StateBlock, Tabs, buttonClass } from '@/components/ui';
 import { useCve } from '@/features/cves/hooks';
 import { useI18n } from '@/i18n';
 import { ApiError } from '@/lib/api';
@@ -77,12 +77,7 @@ function CveDetailView() {
     );
   }
   if (isPending || !cve) {
-    return (
-      <div className="mx-auto flex w-full max-w-[1440px] min-w-0 grow flex-col p-4 md:p-8 gap-4! md:px-8! md:py-6!">
-        <Skeleton width={260} height={28} />
-        <Skeleton lines={4} height={12} />
-      </div>
-    );
+    return <PageLoading />;
   }
 
   const events = buildTimeline(cve, t);

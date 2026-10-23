@@ -180,6 +180,7 @@ function Alerts() {
       ) : null}
       {editingChannel ? (
         <ChannelDrawer
+          saving={m.createChannel.isPending || m.updateChannel.isPending}
           key={editingChannel === 'new' ? 'new' : editingChannel.id}
           channel={editingChannel === 'new' ? null : editingChannel}
           onSave={saveChannel}

@@ -10,7 +10,7 @@ import { ProfileTab } from '@/components/admin/user-profile';
 import { AccessLegend, AccessSummary } from '@/components/admin/access-editor';
 import { useAuth } from '@/components/auth-provider';
 import { RequirePermission } from '@/components/shell/page-guard';
-import { Banner, Button, Checkbox, Icon, IconButton, MonoText, Select, Skeleton, StateBlock, StatusPill, Tabs, Tag, TextField, buttonClass } from '@/components/ui';
+import { Banner, Button, Checkbox, Icon, IconButton, MonoText, PageLoading, Select, Skeleton, StateBlock, StatusPill, Tabs, Tag, TextField, buttonClass } from '@/components/ui';
 import { usePermissionCatalog, useRoles, useUser, useUserMutations } from '@/features/admin/hooks';
 import { useI18n } from '@/i18n';
 import { ApiError } from '@/lib/api';
@@ -198,7 +198,7 @@ function UserDetailView() {
   if (error) {
     return <div className="mx-auto flex w-full max-w-[1440px] min-w-0 grow flex-col gap-5 p-4 md:p-8"><div className="min-w-0 rounded-xl border border-line bg-surface shadow-card"><StateBlock kind="error" title={t('common.loadError')} description={t('common.tryAgainLater')} action={<Button onClick={() => void refetch()}>{t('common.retry')}</Button>} /></div></div>;
   }
-  if (isPending || !user) return <div className="mx-auto flex w-full max-w-[1440px] min-w-0 grow flex-col p-4 md:p-8 gap-4! md:px-8! md:py-6!"><Skeleton width={280} height={28} /><Skeleton lines={5} height={12} /></div>;
+  if (isPending || !user) return <PageLoading />;
 
   const isSelf = me?.id === user.id;
   const disabled = user.status === 'disabled';

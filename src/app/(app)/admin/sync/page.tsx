@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { errorMessage } from '@/components/admin/admin-parts';
+import { SyncProgressPanel, SyncRowProgress } from '@/components/admin/sync-progress';
 import { useAuth } from '@/components/auth-provider';
 import { PageHeader, RequirePermission, RequirePlatform } from '@/components/shell/page-guard';
 import { Banner, Button, Skeleton, StateBlock, StatusPill } from '@/components/ui';
@@ -61,7 +62,7 @@ function SyncView() {
     <div className="mx-auto flex w-full max-w-[1440px] min-w-0 grow flex-col gap-5 p-4 md:p-8">
       <PageHeader
         title={t('sync.title')}
-        subtitle={data ? t('sync.subtitle', { n: states.length, time: lastSuccess ? formatDateTime(lastSuccess) : '—' }) : undefined}
+        subtitle={data ? t('sync.subtitle', { n: states.length, time: lastSuccess ? formatDateTime(lastSuccess) : '—' }) : <Skeleton width={260} height={14} />}
         actions={canRun ? <Button variant="primary" icon="refresh" loading={run.isPending} onClick={() => trigger(states.filter((s) => s.status !== 'running').map((s) => s.source))}>{t('sync.syncAll')}</Button> : undefined}
       />
       {flash ? <Banner tone="success" onDismiss={() => setFlash(false)}>{t('sync.requested')}</Banner> : null}
@@ -88,7 +89,7 @@ function SyncView() {
       </div>
 
       <div className="flex flex-col items-stretch gap-4 xl:flex-row xl:items-start">
-        <section className="min-w-0 rounded-xl border border-line bg-surface shadow-card overflow-hidden main flex flex-col">
+        <section className="min-w-0 grow rounded-xl border border-line bg-surface shadow-card overflow-hidden flex flex-col">
           <div className="overflow-x-auto">
             <div className="grid min-h-12 items-center gap-3 border-b border-line px-5 last:border-b-0 [grid-template-columns:var(--cols)] sticky top-0 z-1 h-10! min-h-0! bg-surface-2 text-sm font-medium text-ink-muted" style={COLS}>
               <span>{t('sync.col.source')}</span>
@@ -98,7 +99,11 @@ function SyncView() {
               <span />
             </div>
             <div className="flex items-center gap-2 border-b border-line bg-canvas px-5 text-sm font-semibold text-ink-muted h-7">{t('sync.group.vuln')}</div>
-            {isPending ? <div className="p-4"><Skeleton lines={3} height={12} /></div> : null}
+            {isPending ? [0, 1, 2].map((i) => (
+              <div key={i} className="grid items-center gap-3 border-b border-line px-5 last:border-b-0 [grid-template-columns:var(--cols)]" style={{ ...COLS, height: 50 }}>
+                <Skeleton width="55%" height={14} /><Skeleton width={72} height={12} /><Skeleton width={64} height={12} /><Skeleton width={48} height={12} className="ml-auto" /><span />
+              </div>
+            )) : null}
             {states.map((s) => {
               const health = sourceHealth(s);
               const isSel = s.source === selected;
@@ -107,7 +112,7 @@ function SyncView() {
                   key={s.source}
                   role="button"
                   tabIndex={0}
-                  className={`grid min-h-12 items-center gap-3 border-b border-line px-5 last:border-b-0 [grid-template-columns:var(--cols)] cursor-pointer hover:bg-surface-2${isSel ? ' bg-accent-soft' : ''}`}
+                  className={`relative grid min-h-12 items-center gap-3 border-b border-line px-5 last:border-b-0 [grid-template-columns:var(--cols)] cursor-pointer hover:bg-surface-2${isSel ? ' bg-accent-soft' : ''}`}
                   style={{ ...COLS, height: 50, boxShadow: isSel ? 'inset 2px 0 0 var(--accent)' : undefined }}
                   onClick={() => setSelected(s.source)}
                   onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && setSelected(s.source)}
@@ -121,7 +126,7 @@ function SyncView() {
                   <StatusPill status={pillStatus(s)} label={s.runRequestedAt && s.status !== 'running' ? t('sync.queued') : undefined} />
                   <span className="tabular-nums text-[13px]" style={{ color: health === 'healthy' ? 'var(--ink)' : 'var(--high-ink)' }}>{s.lastSuccessAt ? age(s.lastSuccessAt) : t('common.never')}</span>
                   <span className="tabular-nums text-[13px] text-right text-ink-muted">{formatNumber(s.recordsProcessed, locale)}</span>
-                  <span className="text-right" onClick={(e) => e.stopPropagation()}>
+                  <span className="flex justify-end" onClick={(e) => e.stopPropagation()}>
                     {canRun ? (
                       <Button
                         size="sm"
@@ -134,13 +139,23 @@ function SyncView() {
                       </Button>
                     ) : null}
                   </span>
+                  <SyncRowProgress state={s} />
                 </div>
               );
             })}
           </div>
         </section>
 
-        {current ? (
+        {isPending ? (
+          <aside aria-hidden="true" className="min-w-0 rounded-xl border border-line bg-surface shadow-card p-5 border-line-strong flex flex-col w-full xl:w-[360px] xl:shrink-0 gap-3.5">
+            <Skeleton width="50%" height={20} />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+              {[0, 1, 2, 3].map((i) => <Skeleton key={i} height={52} />)}
+            </div>
+            <Skeleton height={64} />
+            <Skeleton lines={3} height={12} />
+          </aside>
+        ) : current ? (
           <aside aria-label={t(`sync.src.${current.source}` as MessageKey)} className="min-w-0 rounded-xl border border-line bg-surface shadow-card p-5 border-line-strong flex flex-col w-full xl:w-[360px] xl:shrink-0 gap-3.5">
             <div className="flex items-center gap-2">
               <h2 className="text-lg font-semibold grow">{t(`sync.src.${current.source}` as MessageKey)}</h2>
@@ -159,6 +174,7 @@ function SyncView() {
                 </div>
               ))}
             </div>
+            <SyncProgressPanel state={current} />
             {!current.lastSuccessAt && typeof current.cursor['startIndex'] === 'number' ? (
               <Banner tone="info">{t('sync.detail.fullLoad', { n: formatNumber(current.cursor['startIndex'] as number, locale) })}</Banner>
             ) : null}

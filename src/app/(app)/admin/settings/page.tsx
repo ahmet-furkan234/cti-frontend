@@ -34,6 +34,7 @@ function SoftwareList() {
   const ready = name.trim().length >= 2 && !!picked && !!chosenVendor;
 
   const add = () => {
+    if (!ready || m.create.isPending) return;
     setNotice(null);
     m.create.mutate({ name: name.trim(), pair }, {
       onSuccess: () => { setName(''); setProduct(''); setPicked(null); setVendor(''); setNotice({ tone: 'success', text: t('settings.sw.added') }); },
@@ -54,10 +55,9 @@ function SoftwareList() {
       {notice ? <Banner tone={notice.tone} onDismiss={() => setNotice(null)}>{notice.text}</Banner> : null}
 
       {canEdit ? (
-        <div className="grid grid-cols-1 items-start gap-4 md:grid-cols-[1fr_1.4fr_auto]">
+        <form onSubmit={(e) => { e.preventDefault(); add(); }} className="grid grid-cols-1 items-start gap-4 md:grid-cols-[1fr_1.4fr_auto]">
           <TextField label={t('settings.sw.name')} hint={t('settings.sw.name.hint')} value={name} onChange={(e) => setName(e.target.value)} />
           <div className="flex min-w-0 flex-col gap-1.5">
-            <span className="text-sm font-medium text-ink">{t('settings.sw.product')}</span>
             <SoftwareCombobox
               label={t('settings.sw.product')}
               placeholder={t('settings.sw.product.hint')}
@@ -70,14 +70,14 @@ function SoftwareList() {
             ) : null}
             <span className="text-sm text-ink-subtle">{picked ? t('settings.sw.maps', { pair }) : t('settings.sw.pick')}</span>
           </div>
-          <Button variant="primary" icon="plus" className="md:mt-7" disabled={!ready} loading={m.create.isPending} onClick={add}>{t('settings.sw.add')}</Button>
-        </div>
+          <Button variant="primary" icon="plus" className="md:mt-7" disabled={!ready} loading={m.create.isPending} type="submit">{t('settings.sw.add')}</Button>
+        </form>
       ) : null}
 
       {query.isError ? (
         <LoadError onRetry={() => void query.refetch()} />
       ) : query.isPending ? (
-        <LoadingRows rows={2} />
+        <LoadingRows />
       ) : query.data.items.length === 0 ? (
         <StateBlock kind="empty" compact title={t('settings.sw.empty')} description={t('settings.sw.emptyDesc')} />
       ) : (

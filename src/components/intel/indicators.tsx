@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import { OptionalFields } from '@/components/forms/optional-fields';
 import { Drawer } from '@/components/admin/admin-parts';
 import { IocAssets } from '@/components/intel/ioc-assets';
 import { Banner, Button, Icon, MonoText, SearchInput, StateBlock, Switch, cx } from '@/components/ui';
@@ -120,7 +121,7 @@ export function AddIndicatorsDrawer({ saving, onAdd, onClose }: { saving?: boole
   const byType = IOC_TYPES.map((ty) => [ty, parsed.ok.filter((x) => x.type === ty).length] as const).filter(([, n]) => n > 0);
 
   return (
-    <Drawer title={t('intel.imp.title')} onClose={onClose}
+    <Drawer medium title={t('intel.imp.title')} onClose={onClose}
       footer={
         <>
           <span className="grow" />
@@ -129,10 +130,10 @@ export function AddIndicatorsDrawer({ saving, onAdd, onClose }: { saving?: boole
         </>
       }
     >
-      <p className="text-[15px] text-ink-muted">{t('intel.imp.desc')}</p>
+      <p className="text-sm text-ink-muted">{t('intel.imp.desc')}</p>
       <div className="flex flex-col gap-1.5">
         <label htmlFor="ioc-text" className="text-sm font-medium">{t('intel.imp.label')}</label>
-        <textarea id="ioc-text" rows={8} value={text} onChange={(e) => setText(e.target.value)} placeholder={t('intel.imp.placeholder')} spellCheck={false} className="w-full resize-y rounded-lg border border-line-control bg-surface p-3 font-mono text-sm text-ink placeholder:text-ink-subtle focus-visible:border-accent" autoFocus />
+        <textarea id="ioc-text" rows={6} disabled={saving} value={text} onChange={(e) => setText(e.target.value)} placeholder={t('intel.imp.placeholder')} spellCheck={false} className="w-full resize-y rounded-lg border border-line-control bg-surface p-3 font-mono text-sm text-ink placeholder:text-ink-subtle focus-visible:border-accent" autoFocus />
       </div>
       {parsed.ok.length > 0 ? (
         <div className="flex flex-col gap-2 rounded-xl bg-surface-2 p-4">
@@ -142,6 +143,7 @@ export function AddIndicatorsDrawer({ saving, onAdd, onClose }: { saving?: boole
           </div>
         </div>
       ) : null}
+      <OptionalFields title={t('form.ioc.types')}><div className="flex flex-wrap gap-2 text-sm text-ink-muted">{IOC_TYPES.map((ty) => <span key={ty} className="rounded-md bg-surface-2 px-2 py-1">{t(`intel.type.${ty}` as MessageKey)}</span>)}</div></OptionalFields>
       {parsed.unknown > 0 ? <Banner tone="warning">{t('intel.imp.unknown', { n: parsed.unknown })}</Banner> : null}
     </Drawer>
   );

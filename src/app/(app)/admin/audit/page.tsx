@@ -4,7 +4,7 @@ import { useMemo, useState } from 'react';
 import { AuditFeed } from '@/components/admin/audit-feed';
 import { AuditFilterPanel } from '@/components/admin/audit-filter-panel';
 import { PageHeader, RequirePermission } from '@/components/shell/page-guard';
-import { Button, SearchInput, Skeleton, StateBlock, cx } from '@/components/ui';
+import { Button, SearchInput, LoadingBlock, StateBlock, cx } from '@/components/ui';
 import { useAudit } from '@/features/admin/hooks';
 import { useI18n } from '@/i18n';
 import { matchesFilter, type ActivityFilter } from '@/lib/activity';
@@ -94,7 +94,7 @@ function AuditView() {
 
       <section className="min-w-0 overflow-hidden rounded-xl border border-line bg-surface shadow-card" aria-busy={audit.isPending}>
         {audit.isPending ? (
-          <div className="p-5"><Skeleton lines={6} height={14} /></div>
+          <LoadingBlock />
         ) : audit.isError ? (
           <StateBlock kind="error" title={t('common.loadError')} description={t('common.tryAgainLater')} action={<Button onClick={() => void audit.refetch()}>{t('common.retry')}</Button>} />
         ) : items.length === 0 ? (

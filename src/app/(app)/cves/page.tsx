@@ -6,7 +6,7 @@ import { Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { RequirePermission, PageHeader } from '@/components/shell/page-guard';
 import { FilterPanel } from '@/components/cves/filter-panel';
 import { ResultCard } from '@/components/cves/result-card';
-import { Button, SearchInput, Select, Skeleton, StateBlock } from '@/components/ui';
+import { Button, LoadingBlock, SearchInput, Select, Skeleton, StateBlock } from '@/components/ui';
 import { useAuth } from '@/components/auth-provider';
 import { useCveSearch, type CveQueryParams } from '@/features/cves/hooks';
 import { useDebounced } from '@/lib/use-debounced';
@@ -136,7 +136,7 @@ function Explorer() {
       <section className="min-w-0 overflow-hidden rounded-xl border border-line bg-surface shadow-card" aria-busy={query.isPending}>
         <div className="flex flex-wrap items-center gap-x-3 gap-y-2 border-b border-line px-4 py-3 md:px-5">
           <div className="grow">
-            <span className="text-[15px] font-semibold">{first ? (total !== undefined ? t('cves.results', { n: formatNumber(total, locale) }) : t('cves.resultsMs', { ms: first.tookMs })) : ' '}</span>
+            <span className="text-[15px] font-semibold">{first ? (total !== undefined ? t('cves.results', { n: formatNumber(total, locale) }) : t('cves.resultsMs', { ms: first.tookMs })) : <Skeleton width={110} height={16} className="inline-block align-middle" />}</span>
             {first && total !== undefined ? <span className="ml-2 text-sm text-ink-subtle">{t('cves.resultsMs', { ms: first.tookMs })}</span> : null}
           </div>
           {filtersActive ? <Button size="sm" variant="ghost" onClick={clearFilters}>{t('common.clearFilters')}</Button> : null}
@@ -159,12 +159,7 @@ function Explorer() {
         </div>
 
         {query.isPending ? (
-          Array.from({ length: 6 }, (_, i) => (
-            <div key={i} className="flex gap-4 border-b border-line px-5 py-4 last:border-b-0">
-              <Skeleton width={72} height={72} />
-              <div className="grow"><Skeleton lines={3} height={12} /></div>
-            </div>
-          ))
+          <LoadingBlock />
         ) : query.isError ? (
           <StateBlock kind="error" title={t('common.loadError')} description={t('common.tryAgainLater')} action={<Button onClick={() => void query.refetch()}>{t('common.retry')}</Button>} />
         ) : items.length === 0 ? (

@@ -1,9 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
+import { OptionalFields } from '@/components/forms/optional-fields';
 import { Drawer } from '@/components/admin/admin-parts';
 import { Card, ChannelStatusPill, KindBadge } from '@/components/alerts/shared';
-import { Banner, Button, StateBlock, TextField, cx } from '@/components/ui';
+import { Banner, Button, Select, StateBlock, TextField, cx } from '@/components/ui';
 import { useI18n, type MessageKey } from '@/i18n';
 import { CHANNEL_KINDS, CHANNEL_KIND_ORDER, channelTarget } from '@/lib/alerts';
 import { useAgeMinutes } from '@/lib/use-age';
@@ -56,69 +57,57 @@ export function ChannelGrid({
 }
 
 export function ChannelDrawer({
-  channel, onSave, onRemove, onClose,
+  channel, onSave, onRemove, onClose, saving,
 }: {
-  /** null = adding a new channel (the kind is picked first) */
+  /** null = adding a new channel */
   channel: Channel | null;
+  saving?: boolean;
   onSave: (kind: ChannelKind, name: string, values: Record<string, string>) => void;
   onRemove?: () => void;
   onClose: () => void;
 }) {
   const { t, lang } = useI18n();
-  const [kind, setKind] = useState<ChannelKind | null>(channel?.kind ?? null);
+  const [kind, setKind] = useState<ChannelKind>(channel?.kind ?? 'webhook');
   const [name, setName] = useState(channel?.name ?? '');
   const [values, setValues] = useState<Record<string, string>>(channel?.values ?? {});
   const [showErrors, setShowErrors] = useState(false);
 
-  const pick = (k: ChannelKind) => {
-    setKind(k);
-    setName((n) => n || t(`alerts.ch.kind.${k}` as MessageKey));
+  const drafts = useRef<Partial<Record<ChannelKind, Record<string, string>>>>({});
+  const pick = (next: ChannelKind) => {
+    drafts.current[kind] = values;
+    setKind(next);
+    setValues(drafts.current[next] ?? (next === 'smtp' ? { port: '587' } : {}));
+    setShowErrors(false);
   };
-
-  if (!kind) {
-    return (
-      <Drawer title={t('alerts.ch.add')} onClose={onClose}>
-        <p className="text-[15px] text-ink-muted">{t('alerts.ch.pick')}</p>
-        <div className="flex flex-col gap-3">
-          {CHANNEL_KIND_ORDER.map((k) => (
-            <button key={k} type="button" onClick={() => pick(k)} className="flex items-center gap-4 rounded-xl border border-line bg-surface p-4 text-left transition-colors hover:border-accent hover:bg-accent-soft">
-              <KindBadge kind={k} size={44} />
-              <span className="flex flex-col">
-                <span className="font-semibold">{t(`alerts.ch.kind.${k}` as MessageKey)}</span>
-                <span className="text-sm text-ink-muted">{t(`alerts.ch.kind.${k}.desc` as MessageKey)}</span>
-              </span>
-            </button>
-          ))}
-        </div>
-      </Drawer>
-    );
-  }
 
   const spec = CHANNEL_KINDS[kind];
   const missing = spec.fields.filter((f) => f.required && !(values[f.id] ?? '').trim());
   const save = () => {
+    if (saving) return;
     if (!name.trim() || missing.length > 0) return setShowErrors(true);
     onSave(kind, name.trim(), values);
   };
 
   return (
-    <Drawer title={channel ? channel.name : t(`alerts.ch.kind.${kind}` as MessageKey)} onClose={onClose}
+    <Drawer medium title={channel ? channel.name : t('alerts.ch.add')} onClose={onClose}
       footer={
         <>
           {onRemove ? <Button variant="danger" icon="trash" onClick={onRemove}>{t('alerts.ch.remove')}</Button> : null}
           <span className="grow" />
           <Button variant="ghost" onClick={onClose}>{t('common.cancel')}</Button>
-          <Button variant="primary" icon="check" onClick={save}>{t('alerts.ch.save')}</Button>
+          <Button variant="primary" icon="check" type="submit" form="channel-form" loading={saving}>{t('alerts.ch.save')}</Button>
         </>
       }
     >
       {channel?.problem ? <Banner tone={channel.status === 'failing' ? 'error' : 'warning'}>{channel.problem[lang]}</Banner> : null}
       <p className="text-[15px] text-ink-muted">{t(`alerts.ch.kind.${kind}.desc` as MessageKey)}</p>
-      <div className="flex flex-col gap-4">
-        <TextField label={t('alerts.ch.name')} value={name} onChange={(e) => setName(e.target.value)} error={showErrors && !name.trim() ? t('alerts.err.name') : undefined} />
-        {spec.fields.map((f) => (
+      <form id="channel-form" onSubmit={(e) => { e.preventDefault(); save(); }} className="flex flex-col gap-4">
+        {!channel ? <Select aria-label={t('alerts.ch.pick')} disabled={saving} value={kind} onChange={(v) => pick(v as ChannelKind)} options={CHANNEL_KIND_ORDER.map((k) => ({ value: k, label: t(`alerts.ch.kind.${k}` as MessageKey) }))} /> : null}
+        <TextField autoFocus={!channel} disabled={saving} label={t('alerts.ch.name')} value={name} onChange={(e) => setName(e.target.value)} error={showErrors && !name.trim() ? t('alerts.err.name') : undefined} />
+        {spec.fields.filter((f) => f.required).map((f) => (
           <TextField
             key={f.id}
+            disabled={saving}
             label={t(`alerts.chf.${kind}.${f.id}` as MessageKey)}
             type={f.secret ? 'password' : 'text'}
             mono={f.mono}
@@ -129,7 +118,10 @@ export function ChannelDrawer({
             onChange={(e) => setValues((v) => ({ ...v, [f.id]: e.target.value }))}
           />
         ))}
-      </div>
+        {spec.fields.some((f) => !f.required) ? <OptionalFields key={kind} title={t('form.advanced')} defaultOpen={spec.fields.some((f) => !f.required && !!values[f.id])}>
+          {spec.fields.filter((f) => !f.required).map((f) => <TextField key={f.id} label={t(`alerts.chf.${kind}.${f.id}` as MessageKey)} type={f.secret ? 'password' : 'text'} autoComplete="off" mono={f.mono} value={values[f.id] ?? ''} onChange={(e) => setValues((v) => ({ ...v, [f.id]: e.target.value }))} />)}
+        </OptionalFields> : null}
+      </form>
     </Drawer>
   );
 }

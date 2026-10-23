@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation';
 import { Suspense, useState, type FormEvent } from 'react';
 import { TokenGate } from '@/components/auth/token-page';
 import { useAuth } from '@/components/auth-provider';
-import { Banner, Button, PasswordStrength, TextField } from '@/components/ui';
+import { Banner, Button, Icon, PasswordStrength, TextField } from '@/components/ui';
 import { useT } from '@/i18n';
 import { api, ApiError } from '@/lib/api';
 import type { LoginResponse } from '@/lib/types';
@@ -16,6 +16,8 @@ function RegisterForm({ email, token }: { email: string; token: string }) {
   const [name, setName] = useState('');
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -24,7 +26,7 @@ function RegisterForm({ email, token }: { email: string; token: string }) {
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
-    if (password.length < 12 || password !== confirm) return;
+    if (pending || !name.trim() || password.length < 12 || password !== confirm) return;
     setPending(true);
     setError(null);
     try {
@@ -38,17 +40,17 @@ function RegisterForm({ email, token }: { email: string; token: string }) {
   };
 
   return (
-    <form className="flex w-full max-w-[420px] flex-col gap-5 rounded-2xl border border-line bg-surface p-8 shadow-card" onSubmit={submit} noValidate>
+    <form className="flex w-full max-w-[420px] flex-col gap-4 rounded-2xl border border-line bg-surface p-6 shadow-card" onSubmit={submit} noValidate>
       <div>
         <h1 className="text-2xl leading-8 font-semibold tracking-tight">{t('auth.register.title')}</h1>
         <div className="text-sm text-ink-muted">{t('auth.register.subtitle', { email })}</div>
       </div>
       {error ? <Banner tone="error">{error}</Banner> : null}
-      <TextField label={t('auth.email')} type="email" value={email} readOnly disabled />
       <TextField label={t('auth.name')} value={name} onChange={(e) => setName(e.target.value)} autoComplete="name" required autoFocus />
       <TextField
         label={t('auth.newPassword')}
-        type="password"
+        type={showPassword ? 'text' : 'password'}
+        endAdornment={<button type="button" className="inline-flex size-8 items-center justify-center text-ink-muted" aria-label={t(showPassword ? 'register.passwordHide' : 'register.passwordShow')} aria-pressed={showPassword} onClick={() => setShowPassword((v) => !v)}><Icon name={showPassword ? 'eye-off' : 'eye'} size={18} /></button>}
         value={password}
         onChange={(e) => setPassword(e.target.value)}
         autoComplete="new-password"
@@ -58,7 +60,8 @@ function RegisterForm({ email, token }: { email: string; token: string }) {
       <PasswordStrength password={password} hint={t('auth.passwordHint')} />
       <TextField
         label={t('auth.confirmPassword')}
-        type="password"
+        type={showConfirm ? 'text' : 'password'}
+        endAdornment={<button type="button" className="inline-flex size-8 items-center justify-center text-ink-muted" aria-label={t(showConfirm ? 'register.passwordHide' : 'register.passwordShow')} aria-pressed={showConfirm} onClick={() => setShowConfirm((v) => !v)}><Icon name={showConfirm ? 'eye-off' : 'eye'} size={18} /></button>}
         value={confirm}
         onChange={(e) => setConfirm(e.target.value)}
         autoComplete="new-password"

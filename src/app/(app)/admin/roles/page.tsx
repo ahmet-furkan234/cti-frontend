@@ -2,10 +2,11 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { AdminHeader, Drawer, errorMessage } from '@/components/admin/admin-parts';
+import { OptionalFields } from '@/components/forms/optional-fields';
 import { AccessEditor } from '@/components/admin/access-editor';
 import { useAuth } from '@/components/auth-provider';
 import { RequirePermission } from '@/components/shell/page-guard';
-import { Banner, Button, Icon, Skeleton, StateBlock, Tag, TextField } from '@/components/ui';
+import { Banner, Button, Icon, LoadingBlock, StateBlock, Tag, TextField } from '@/components/ui';
 import { usePermissionCatalog, useRoleMutations, useRoles } from '@/features/admin/hooks';
 import { useI18n } from '@/i18n';
 import { areaTitle, groupByArea, roleLabel, type AccessArea } from '@/lib/access';
@@ -117,9 +118,11 @@ function RoleDrawer({ role, areas, onClose }: { role: Role | null; areas: Access
       {err ? <Banner tone="error">{errorMessage(err, t('common.tryAgainLater'))}</Banner> : null}
       {role?.isSystem ? <Banner tone="info">{isSuper ? t('roles.editor.superNote') : t('roles.editor.systemNote')}</Banner> : null}
 
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+      <div className="flex flex-col gap-3">
         <TextField label={t('roles.editor.name')} value={name} onChange={(e) => setName(e.target.value)} disabled={!canManage || !!role?.isSystem} hint={t('roles.editor.nameHint')} />
+        <OptionalFields title={t('roles.editor.description')} defaultOpen={!!role?.description}>
         <TextField label={t('roles.editor.description')} value={description} onChange={(e) => setDescription(e.target.value)} disabled={!canManage} />
+        </OptionalFields>
       </div>
 
       <div className="flex flex-col gap-2">
@@ -156,9 +159,7 @@ function RolesView() {
       {roles.isError || catalog.isError ? (
         <div className="min-w-0 rounded-xl border border-line bg-surface shadow-card"><StateBlock kind="error" title={t('common.loadError')} description={t('common.tryAgainLater')} /></div>
       ) : roles.isPending || catalog.isPending ? (
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {[0, 1, 2].map((i) => <div key={i} className="rounded-xl border border-line bg-surface p-5"><Skeleton lines={3} height={12} /></div>)}
-        </div>
+        <div className="min-w-0 rounded-xl border border-line bg-surface shadow-card"><LoadingBlock /></div>
       ) : (
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
           {list.map((r) => <RoleCard key={r.id} role={r} areas={areas} onOpen={() => setOpenId(r.id)} />)}

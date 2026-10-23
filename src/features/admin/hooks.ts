@@ -107,7 +107,7 @@ export const useSyncStates = (enabled = true) =>
     queryFn: () => api<SyncState[]>('/sync'),
     enabled,
     // Poll faster while something is running or queued.
-    refetchInterval: (q) => (q.state.data?.some((s) => s.status === 'running' || s.runRequestedAt) ? 3_000 : 30_000),
+    refetchInterval: (q) => (q.state.data?.some((s) => s.status === 'running' || s.runRequestedAt) ? 2_000 : 30_000),
   });
 
 export function useRunSync() {

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { OptionalFields } from '@/components/forms/optional-fields';
 import { Drawer } from '@/components/admin/admin-parts';
 import { Button, Select, TextField, cx } from '@/components/ui';
 import { useI18n, type MessageKey } from '@/i18n';
@@ -43,25 +44,26 @@ export function ReportDrawer({ template, mode: initialMode, existing, saving, on
     recipients: !parsed.ok ? 'reports.err.recipients' : scheduling && parsed.list.length === 0 ? 'reports.err.recipientsReq' : null,
   } as const;
   const submit = () => {
+    if (saving) return;
     if (errors.format || errors.recipients) return setShowErrors(true);
     onSubmit({ template, mode, formats, period, freq, recipients: parsed.list, scope: scope.trim() });
   };
   const toggleFormat = (f: Format) => setFormats((cur) => (cur.includes(f) ? cur.filter((x) => x !== f) : [...cur, f]));
 
   return (
-    <Drawer centered title={t(`reports.name.${template}` as MessageKey)} onClose={onClose}
+    <Drawer centered medium title={t(`reports.name.${template}` as MessageKey)} onClose={onClose}
       footer={
         <>
           <span className="grow" />
           <Button variant="ghost" onClick={onClose}>{t('common.cancel')}</Button>
-          <Button variant="primary" icon="check" loading={saving} onClick={submit}>
+          <Button variant="primary" icon="check" loading={saving} type="submit" form="report-form">
             {existing ? t('reports.d.submit.save') : t(scheduling ? 'reports.d.submit.schedule' : 'reports.d.submit.now')}
           </Button>
         </>
       }
     >
       <p className="text-[15px] text-ink-muted">{t(`reports.desc.${template}` as MessageKey)}</p>
-      <div className="flex flex-col gap-6">
+      <form id="report-form" onSubmit={(e) => { e.preventDefault(); submit(); }} className="flex flex-col gap-4">
         {!existing ? (
           <div role="radiogroup" aria-label={t('reports.d.mode')} className="grid grid-cols-2 gap-2">
             {(['now', 'schedule'] as Mode[]).map((m) => (
@@ -98,6 +100,7 @@ export function ReportDrawer({ template, mode: initialMode, existing, saving, on
 
         {template === 'owner' ? <TextField label={t('reports.d.scope')} hint={t('reports.d.scope.hint')} value={scope} onChange={(e) => setScope(e.target.value)} /> : null}
 
+        {scheduling ? (
         <TextField
           label={scheduling ? t('reports.d.recipients') : t('reports.d.recipientsOpt')}
           hint={t('reports.d.recipients.hint')}
@@ -106,7 +109,18 @@ export function ReportDrawer({ template, mode: initialMode, existing, saving, on
           onChange={(e) => setRecipients(e.target.value)}
           inputMode="email"
         />
-      </div>
+        ) : <OptionalFields title={t('reports.d.recipientsOpt')} defaultOpen={!!recipients} invalid={showErrors && !!errors.recipients}>
+        <TextField
+          label={scheduling ? t('reports.d.recipients') : t('reports.d.recipientsOpt')}
+          hint={t('reports.d.recipients.hint')}
+          error={showErrors && errors.recipients ? t(errors.recipients) : undefined}
+          value={recipients}
+          onChange={(e) => setRecipients(e.target.value)}
+          inputMode="email"
+        />
+        </OptionalFields>}
+
+      </form>
     </Drawer>
   );
 }

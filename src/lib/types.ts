@@ -188,6 +188,14 @@ export interface AuditResponse {
 }
 
 export type SyncSource = 'nvd' | 'kev' | 'epss';
+export interface SyncProgress {
+  phase: 'full' | 'incremental' | 'download' | 'apply';
+  done: number;
+  total: number | null;
+  baseDone: number;
+  startedAt: string;
+  updatedAt: string;
+}
 export interface SyncState {
   source: SyncSource;
   status: 'idle' | 'running' | 'error';
@@ -198,6 +206,7 @@ export interface SyncState {
   recordsProcessed: number;
   cursor: Record<string, unknown>;
   runRequestedAt: string | null;
+  progress: SyncProgress | null;
 }
 
 /* ---- inventory */

@@ -166,6 +166,10 @@
       animation-duration: 0.01ms !important;
       transition-duration: 0.01ms !important;
     }
+    /* A loader must still read as "working": rotate slowly instead of the 0.01ms flicker above. */
+    .animate-spin {
+      animation-duration: 1s !important;
+    }
   }
 }
 
@@ -195,8 +199,9 @@
 .skeleton {
   background: linear-gradient(90deg, var(--surface-2) 0%, var(--surface-3) 50%, var(--surface-2) 100%);
   background-size: 200% 100%;
-  animation: shimmer 1.4s ease-in-out infinite;
+  animation: shimmer 1.6s ease-in-out infinite;
 }
+@media (prefers-reduced-motion: reduce) { .skeleton { animation: none; } }
 
 /* No default scrollbars anywhere; content still scrolls with wheel, touch and keyboard. */
 * { scrollbar-width: none; }

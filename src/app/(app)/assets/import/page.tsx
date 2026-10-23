@@ -13,7 +13,7 @@ import { FIELD_OPTIONS, SAMPLE_CSV, autoMap, buildRows, parseCsv, parseNmap, par
 import { PERMISSIONS as P } from '@/lib/permissions';
 import type { ImportResult } from '@/lib/types';
 
-const STEPS = ['source', 'mapping', 'validation', 'confirm'] as const;
+const STEPS = ['source', 'mapping', 'validation'] as const;
 type Source = 'csv' | 'nmap' | 'sbom';
 const SOURCES: { id: Source; icon: IconName; accept: string }[] = [
   { id: 'csv', icon: 'report', accept: '.csv,.txt' },
@@ -70,7 +70,7 @@ function SourceStep({ source, setSource, file, setFile }: {
   };
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-4">
       <section className="flex flex-col gap-3">
         <h2 className="text-lg font-semibold">{t('import.src.title')}</h2>
         <div role="radiogroup" aria-label={t('import.src.title')} className="grid grid-cols-1 gap-3 md:grid-cols-3">
@@ -102,7 +102,7 @@ function SourceStep({ source, setSource, file, setFile }: {
         onDragOver={(e) => { e.preventDefault(); setOver(true); }}
         onDragLeave={() => setOver(false)}
         onDrop={(e) => { e.preventDefault(); setOver(false); void take(e.dataTransfer.files[0]); }}
-        className={cx('flex flex-col items-center gap-3 rounded-xl border-2 border-dashed px-6 py-12 text-center transition-colors', over ? 'border-accent bg-accent-soft' : 'border-line-strong bg-surface')}
+        className={cx('flex flex-col items-center gap-3 rounded-xl border-2 border-dashed px-5 py-7 text-center transition-colors', over ? 'border-accent bg-accent-soft' : 'border-line-strong bg-surface')}
       >
         <input ref={input} type="file" hidden accept={SOURCES.find((s) => s.id === source)!.accept} onChange={(e) => { void take(e.target.files?.[0]); e.target.value = ''; }} />
         {file ? (
@@ -131,8 +131,8 @@ function SourceStep({ source, setSource, file, setFile }: {
         {error ? <p role="alert" className="m-0 text-sm text-critical-ink">{t(error)}</p> : null}
       </section>
 
-      <section className={cx(card, 'overflow-hidden')}>
-        <h2 className="px-5 py-4 text-base font-semibold">{t('import.history')}</h2>
+      <details className={cx(card, 'overflow-hidden')}>
+        <summary className="cursor-pointer px-4 py-3 text-sm font-medium">{t('import.history')}</summary>
         {history.data?.items.length === 0 ? <p className="m-0 border-t border-line px-5 py-6 text-center text-sm text-ink-muted">{t('import.history.empty')}</p> : null}
         {history.data?.items.map((h) => (
           <div key={h.id} className="flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-line px-5 py-3">
@@ -141,7 +141,7 @@ function SourceStep({ source, setSource, file, setFile }: {
             <StatusPill status={h.status} />
           </div>
         ))}
-      </section>
+      </details>
     </div>
   );
 }
@@ -333,11 +333,13 @@ function ImportWizard() {
     if (step !== 2 || !file) return;
     setCheck(null);
     setError(null);
-    importer.mutate({ source: file.name, kind: KIND[source], rows: rowsBody, dryRun: true, skipInvalid: false }, { onSuccess: setCheck, onError: (e) => setError(explain(e)) });
+    let active = true;
+    importer.mutate({ source: file.name, kind: KIND[source], rows: rowsBody, dryRun: true, skipInvalid: false }, { onSuccess: (value) => { if (active) setCheck(value); }, onError: (e) => { if (active) setError(explain(e)); } });
+    return () => { active = false; };
   }, [step]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const run = () => {
-    if (!file) return;
+    if (!file || !check || importer.isPending || check.totals.created + check.totals.updated === 0 || (check.totals.errors > 0 && !skipBad)) return;
     setPhase('running');
     setError(null);
     importer.mutate(
@@ -355,33 +357,37 @@ function ImportWizard() {
   const importable = check ? check.totals.created + check.totals.updated : 0;
 
   return (
-    <div className="mx-auto flex w-full max-w-[960px] min-w-0 grow flex-col gap-6 p-4 md:p-8">
+    <div className="mx-auto flex w-full max-w-[880px] min-w-0 grow flex-col gap-4 p-4 md:p-8">
       <nav className="text-sm text-ink-muted [&_a]:text-ink-muted [&_a:hover]:text-ink" aria-label="breadcrumb">
         <Link href="/assets">{t('assets.title')}</Link> / {t('import.breadcrumb')}
       </nav>
       <PageHeader title={t('import.title')} subtitle={t('import.subtitle')} actions={demo ? <Tag tone="accent">{t('common.demoData')}</Tag> : undefined} />
+      <nav className="flex gap-2 border-b border-line pb-3" aria-label={t('asset.simple.method')}>
+        <Link href="/assets/new" className={buttonClass('ghost', 'sm')}>{t('asset.simple.single')}</Link>
+        <Link href="/assets/import" aria-current="page" className={buttonClass('secondary', 'sm')}>{t('assets.new.bulkLink')}</Link>
+      </nav>
       <Stepper
         label={t('import.steps')}
         current={step}
-        onJump={finished ? undefined : setStep}
+        onJump={finished || importer.isPending ? undefined : setStep}
         steps={STEPS.map((id) => ({ id, label: t(`import.step.${id}` as MessageKey), hint: t(`import.step.${id}.desc` as MessageKey) }))}
       />
 
-      <div>
+      <div className="flex flex-col gap-4">
         {step === 0 ? <SourceStep source={source} setSource={setSource} file={file} setFile={chooseFile} /> : null}
         {step === 1 && file ? <MappingStep table={file.table} fields={fields} setFields={setFields} /> : null}
-        {step === 2 ? <ValidationStep check={check} loading={importer.isPending} error={error} skipBad={skipBad} setSkipBad={setSkipBad} /> : null}
-        {step === 3 ? <ConfirmStep phase={phase} check={check} result={result} error={error} onReset={() => { setStep(0); chooseFile(null); setPhase('review'); setResult(null); }} /> : null}
+        {step === 2 && phase === 'review' ? <ValidationStep check={check} loading={importer.isPending} error={error} skipBad={skipBad} setSkipBad={setSkipBad} /> : null}
+        {step === 2 && check && (phase !== 'review' || (!error && (errors === 0 || skipBad))) ? <ConfirmStep phase={phase} check={check} result={result} error={error} onReset={() => { setStep(0); chooseFile(null); setPhase('review'); setResult(null); }} /> : null}
       </div>
 
       {phase !== 'done' ? (
         <div className="sticky bottom-0 -mx-4 flex flex-wrap items-center gap-3 border-t border-line bg-canvas/95 px-4 py-4 backdrop-blur md:mx-0 md:rounded-xl md:border md:bg-surface md:px-5">
-          <Button variant="ghost" disabled={step === 0 || phase === 'running'} onClick={() => setStep((s) => s - 1)}>{t('common.back')}</Button>
+          <Button variant="ghost" disabled={step === 0 || phase === 'running' || importer.isPending} onClick={() => setStep((s) => s - 1)}>{t('common.back')}</Button>
           <span className="grow text-sm text-ink-muted">{block ? t(block) : t('import.stepOf', { n: step + 1, total: STEPS.length })}</span>
           {step < STEPS.length - 1 ? (
-            <Button variant="primary" disabled={!canNext} onClick={() => setStep((s) => s + 1)}>{t('import.next')}</Button>
+            <Button variant="primary" disabled={!canNext || importer.isPending} onClick={() => setStep((s) => s + 1)}>{t('import.next')}</Button>
           ) : (
-            <Button variant="primary" icon="check" disabled={importable === 0} loading={phase === 'running'} onClick={run}>
+            <Button variant="primary" icon="check" disabled={importable === 0 || !check || (errors > 0 && !skipBad) || importer.isPending} loading={phase === 'running'} onClick={run}>
               {phase === 'running' ? t('import.running') : t('import.run', { n: importable })}
             </Button>
           )}

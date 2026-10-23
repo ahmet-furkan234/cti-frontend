@@ -1,6 +1,12 @@
 import { defineMessages } from '../define';
 
 export const assets = defineMessages({
+  'asset.simple.subtitle': { tr: 'Varlığı tanımlayın, yazılım sürümlerini ekleyin ve kaydedin.', en: 'Identify the asset, add software versions and save.' },
+  'asset.simple.details': { tr: 'Ek bilgiler', en: 'Additional details' },
+  'asset.simple.details.hint': { tr: 'İsteğe bağlı: sorumlu, teknik ayrıntılar ve güvenlik ayarları.', en: 'Optional: owner, technical details and security settings.' },
+  'asset.simple.method': { tr: 'Varlık ekleme yöntemi', en: 'Asset creation method' },
+  'asset.simple.single': { tr: 'Tek varlık', en: 'Single asset' },
+
   'assets.tile.all': { tr: 'Tüm varlıklar', en: 'All assets' },
   'assets.tile.all.sub': { tr: 'envanterdeki toplam', en: 'in the inventory' },
   'assets.tile.internet': { tr: 'İnternete açık', en: 'Internet-facing' },

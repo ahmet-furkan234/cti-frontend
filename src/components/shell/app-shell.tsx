@@ -4,7 +4,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState, type ReactNode } from 'react';
 import { useAuth } from '@/components/auth-provider';
 import { isLocalSession } from '@/lib/local-auth';
-import { Banner, Button, Skeleton } from '@/components/ui';
+import { Banner, Button } from '@/components/ui';
 import { useT } from '@/i18n';
 import { Sidebar } from './sidebar';
 import { Topbar } from './topbar';
@@ -22,11 +22,8 @@ export function AppShell({ children }: { children: ReactNode }) {
   }, [status, router, pathname]);
 
   if (status !== 'authed') {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-canvas" role="status" aria-label={t('shell.sessionChecking')}>
-        <Skeleton width={220} height={14} />
-      </div>
-    );
+    // Nothing is rendered until the session is known (no protected content, no API calls); anon users are redirected above.
+    return <div className="min-h-screen bg-canvas" />;
   }
 
   return (

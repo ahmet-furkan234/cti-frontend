@@ -82,9 +82,18 @@ const fieldHint = (t: TFunction, type: AssetType, id: string) => {
   return out === key ? undefined : out;
 };
 
-function Section({ title, desc, children }: { title: string; desc: string; children: React.ReactNode }) {
+function Section({ title, desc, children, collapsed = false }: { title: string; desc: string; children: React.ReactNode; collapsed?: boolean }) {
+  if (collapsed) return (
+    <details className="group rounded-xl border border-line bg-surface shadow-card">
+      <summary className="flex cursor-pointer list-none items-center justify-between gap-3 p-4 [&::-webkit-details-marker]:hidden">
+        <span><span className="block font-semibold">{title}</span><span className="text-sm text-ink-muted">{desc}</span></span>
+        <Icon name="down" size={18} className="shrink-0 transition-transform group-open:rotate-180" />
+      </summary>
+      <div className="flex flex-col gap-4 border-t border-line p-4">{children}</div>
+    </details>
+  );
   return (
-    <section className="flex flex-col gap-5 rounded-xl border border-line bg-surface p-6 shadow-card">
+    <section className="flex flex-col gap-4 rounded-xl border border-line bg-surface p-4 shadow-card">
       <div>
         <h2 className="text-lg font-semibold">{title}</h2>
         <p className="text-[15px] text-ink-muted">{desc}</p>
@@ -236,12 +245,16 @@ export function AssetForm({
   onChange,
   onChangeType,
   showErrors,
+  simplified = false,
+  onSelectType,
 }: {
   draft: AssetDraft;
   onChange: (next: AssetDraft) => void;
   /** omitted when editing: an asset keeps its type */
   onChangeType?: () => void;
   showErrors: boolean;
+  simplified?: boolean;
+  onSelectType?: (type: AssetType) => void;
 }) {
   const { t } = useI18n();
   const spec = ASSET_TYPE_SPECS[draft.type];
@@ -252,6 +265,8 @@ export function AssetForm({
   const addSoftware = () => set('software', [...draft.software, { id: Math.max(0, ...draft.software.map((x) => x.id)) + 1, name: '', version: '' }]);
   const typeKey = (suffix: string) => `atype.id.${draft.type}.${suffix}` as MessageKey;
   const plain = spec.fields.filter((f) => f.kind !== 'switch');
+  const primary = plain.filter((f) => f.summary || /version|firmware/.test(f.id));
+  const secondary = plain.filter((f) => !primary.includes(f));
   const switches = spec.fields.filter((f) => f.kind === 'switch');
   // Checking waits until typing pauses; an answer is shown only for the row whose text it was computed for.
   const entries = useDebounced(draft.software.filter((x) => x.name.trim()).map((x) => ({ product: x.name.trim(), version: x.version.trim() })), 500);
@@ -260,7 +275,10 @@ export function AssetForm({
 
   return (
     <div className="flex flex-col gap-5">
-      <div className="flex items-center gap-3 rounded-xl bg-accent-soft px-4 py-3">
+      {simplified && onSelectType ? <div className="flex flex-col gap-1.5">
+        <label className="text-sm font-medium" id="asset-type-label">{t('asset.type.current')}</label>
+        <Select aria-labelledby="asset-type-label" value={draft.type} onChange={(value) => onSelectType(value as AssetType)} options={ASSET_TYPE_ORDER.map((type) => ({ value: type, label: t(`assets.type.${type}` as MessageKey) }))} />
+      </div> : <div className="flex items-center gap-3 rounded-xl bg-accent-soft px-4 py-3">
         <span className="inline-flex size-10 shrink-0 items-center justify-center rounded-lg bg-accent text-on-accent">
           <Icon name={ASSET_ICON[draft.type]} size={20} />
         </span>
@@ -269,7 +287,7 @@ export function AssetForm({
           <div className="font-semibold">{t(`assets.type.${draft.type}` as MessageKey)}</div>
         </div>
         {onChangeType ? <Button size="sm" onClick={onChangeType}>{t('asset.type.change')}</Button> : null}
-      </div>
+      </div>}
 
       <Section title={t('asset.sec.identity')} desc={spec.required === 'name' ? t(`atype.desc.${draft.type}` as MessageKey) : t(spec.addr === 'url' ? 'asset.sec.identity.desc.url' : 'asset.sec.identity.desc')}>
         {showErrors && errors.identity ? (
@@ -299,6 +317,13 @@ export function AssetForm({
             />
           ) : null}
         </div>
+        {simplified ? <>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div className="flex flex-col gap-1.5"><span className="text-sm font-medium">{t('asset.f.env')}</span><Select aria-label={t('asset.f.env')} value={draft.env} onChange={(v) => set('env', v)} options={ENVS.map((id) => ({ value: id, label: t(`env.${id}` as MessageKey) }))} /></div>
+            <div className="flex flex-col gap-1.5"><span className="text-sm font-medium">{t('assets.col.criticality')}</span><Select aria-label={t('assets.col.criticality')} value={draft.crit} onChange={(v) => set('crit', v as Criticality)} options={CRITS.map((id) => ({ value: id, label: t(`sev.${id}` as MessageKey) }))} /></div>
+          </div>
+          {spec.exposure ? <Switch checked={draft.exposed} onChange={(v) => set('exposed', v)} label={t('asset.f.exposed')} /> : null}
+        </> : <>
         <Choice
           legend={t('asset.f.env')}
           value={draft.env as (typeof ENVS)[number]}
@@ -307,15 +332,16 @@ export function AssetForm({
           options={ENVS.map((id) => ({ id, label: t(`env.${id}` as MessageKey) }))}
         />
         <TextField label={t('asset.f.owner')} hint={t('asset.f.owner.hint')} value={draft.owner} onChange={(e) => set('owner', e.target.value)} />
+        </>}
       </Section>
 
       <Section title={t(`atype.sec.${draft.type}` as MessageKey)} desc={t('asset.sec.software.desc')}>
         {plain.length > 0 ? (
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            {plain.map((f) => <FieldInput key={f.id} type={draft.type} spec={f} draft={draft} set={setAttr} />)}
+            {(simplified ? primary : plain).map((f) => <FieldInput key={f.id} type={draft.type} spec={f} draft={draft} set={setAttr} />)}
           </div>
         ) : null}
-        {switches.length > 0 ? (
+        {!simplified && switches.length > 0 ? (
           <div className="flex flex-col gap-4">
             {switches.map((f) => <FieldInput key={f.id} type={draft.type} spec={f} draft={draft} set={setAttr} />)}
           </div>
@@ -328,9 +354,9 @@ export function AssetForm({
               const check = x.name.trim() ? checkFor(x) : undefined;
               return (
               <div key={x.id} className="flex flex-col gap-1.5">
-              <div className="flex items-start gap-2">
-                <SoftwareCombobox className="grow" label={t('asset.sw.name')} placeholder={t('asset.sw.name.hint')} value={x.name} onChange={(v) => setSoftware(x.id, { name: v })} />
-                <VersionPicker className="w-36 shrink-0" product={x.name} value={x.version} onChange={(v) => setSoftware(x.id, { version: v })} />
+              <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-2 sm:grid-cols-[minmax(0,1fr)_144px_auto]">
+                <SoftwareCombobox className="col-span-2 min-w-0 sm:col-span-1" label={t('asset.sw.name')} placeholder={t('asset.sw.name.hint')} value={x.name} onChange={(v) => setSoftware(x.id, { name: v })} />
+                <VersionPicker className="min-w-0" product={x.name} value={x.version} onChange={(v) => setSoftware(x.id, { version: v })} />
                 <button
                   type="button"
                   aria-label={t('asset.sw.remove')}
@@ -352,7 +378,11 @@ export function AssetForm({
         ) : null}
       </Section>
 
-      <Section title={t('asset.sec.class')} desc={t('asset.sec.class.desc')}>
+      {simplified ? <Section title={t('asset.simple.details')} desc={t('asset.simple.details.hint')} collapsed>
+        <TextField label={t('asset.f.owner')} value={draft.owner} onChange={(e) => set('owner', e.target.value)} />
+        {secondary.length > 0 ? <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">{secondary.map((f) => <FieldInput key={f.id} type={draft.type} spec={f} draft={draft} set={setAttr} />)}</div> : null}
+        {switches.map((f) => <FieldInput key={f.id} type={draft.type} spec={f} draft={draft} set={setAttr} />)}
+      </Section> : <Section title={t('asset.sec.class')} desc={t('asset.sec.class.desc')}>
         <Choice
           legend={t('assets.col.criticality')}
           value={draft.crit}
@@ -366,7 +396,8 @@ export function AssetForm({
           }))}
         />
         {spec.exposure ? <Switch checked={draft.exposed} onChange={(v) => set('exposed', v)} label={t('asset.f.exposed')} hint={t('asset.f.exposed.hint')} /> : null}
-      </Section>
+      </Section>}
+
     </div>
   );
 }

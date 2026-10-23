@@ -92,7 +92,7 @@ export function mockCveStats(): CveStats {
 export const MOCK_SYNC: SyncState[] = (['nvd', 'kev', 'epss'] as const).map((source) => ({
   source, status: 'idle', lastSuccessAt: iso(0), lastStartedAt: iso(0.001), lastFinishedAt: iso(0),
   lastError: null, recordsProcessed: source === 'kev' ? MOCK_CVES.filter((c) => c.isKev).length : MOCK_CVES.length,
-  cursor: {}, runRequestedAt: null,
+  cursor: {}, runRequestedAt: null, progress: null,
 }));
 
 export function mockRead(path: string, query?: Query): unknown {

@@ -5,6 +5,32 @@ import { Icon, type IconName } from './icon';
 import { cx } from './controls';
 import { useT } from '@/i18n';
 
+/* ---------- LoadingBlock: centered spinner for a panel that is still fetching ---------- */
+export function LoadingBlock({ label, className }: { label?: string; className?: string }) {
+  const t = useT();
+  return (
+    <div role="status" aria-live="polite" className={cx('flex flex-col items-center justify-center gap-3 text-ink-muted', className ?? 'min-h-[360px]')}>
+      <span className="size-10 animate-spin rounded-full border-[3px] border-surface-3 border-t-accent" style={{ animationDuration: '1s' }} aria-hidden="true" />
+      <span className="text-sm">{label ?? t('common.loading')}</span>
+    </div>
+  );
+}
+
+/** Whole-page placeholder: skeleton title + a panel with a spinner. Used while a route or its main record loads. */
+export function PageLoading() {
+  return (
+    <div className="mx-auto flex w-full max-w-[1440px] min-w-0 grow flex-col gap-5 p-4 md:p-8" aria-busy="true">
+      <div className="flex flex-col gap-2">
+        <Skeleton width={240} height={28} />
+        <Skeleton width={360} height={14} />
+      </div>
+      <div className="min-w-0 rounded-xl border border-line bg-surface shadow-card">
+        <LoadingBlock className="min-h-[420px]" />
+      </div>
+    </div>
+  );
+}
+
 /* ---------- Skeleton ---------- */
 export function Skeleton({
   width = '100%',

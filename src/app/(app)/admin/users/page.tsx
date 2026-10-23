@@ -3,11 +3,14 @@
 import Link from 'next/link';
 import { useMemo, useState, type FormEvent } from 'react';
 import { AdminHeader, Drawer, errorMessage } from '@/components/admin/admin-parts';
+import { OptionalFields } from '@/components/forms/optional-fields';
+import { Stepper } from '@/components/assets/stepper';
+import { LoadError } from '@/components/shell/query-state';
 import { AccessEditor } from '@/components/admin/access-editor';
 import { Avatar } from '@/components/admin/avatar';
 import { useAuth } from '@/components/auth-provider';
 import { RequirePermission } from '@/components/shell/page-guard';
-import { Banner, Button, Icon, SearchInput, Skeleton, StateBlock, StatusPill, Tag, TextField, cx } from '@/components/ui';
+import { Banner, Button, Icon, SearchInput, LoadingBlock, Skeleton, StateBlock, StatusPill, Tag, TextField, cx } from '@/components/ui';
 import { useCreateUser, usePermissionCatalog, useRoles, useUsers } from '@/features/admin/hooks';
 import { useI18n } from '@/i18n';
 import { groupByArea, roleLabel } from '@/lib/access';
@@ -61,7 +64,10 @@ function RegisterDrawer({ onClose }: { onClose: () => void }) {
       setStep(3);
     }
   };
-  const submit = () => create.mutate({ name: name.trim(), email, password, roleIds, overrides: canCustomize ? overrides : [] });
+  const submit = () => {
+    if (create.isPending || !name.trim() || !passwordValid || roleIds.length === 0 || (canCustomize && (catalog.isPending || catalog.isError))) return;
+    create.mutate({ name: name.trim(), email: email.trim(), password, roleIds, overrides: canCustomize ? overrides : [] });
+  };
   const reset = () => {
     create.reset(); setStep(1); setName(''); setEmail(''); setPassword(''); setConfirmation(''); setShowPassword(false); setShowConfirmation(false); setRoleIds([]); setCustomKeys([]);
   };
@@ -80,9 +86,9 @@ function RegisterDrawer({ onClose }: { onClose: () => void }) {
       centered
       footer={result ? undefined : (
         <>
-          {step > 1 ? <Button variant="ghost" onClick={() => setStep((s) => s - 1)}>{t('common.back')}</Button> : <span className="grow" />}
-          {step < 3 ? <Button variant="primary" onClick={next} disabled={step === 1 ? !name.trim() || !email || !passwordValid : roleIds.length === 0}>{t('common.next')}</Button> : (
-            <Button variant="primary" icon="check" loading={create.isPending} onClick={submit}>{t('register.submit')}</Button>
+          {step > 1 ? <Button variant="ghost" disabled={create.isPending} onClick={() => setStep((s) => s - 1)}>{t('common.back')}</Button> : <span className="grow" />}
+          {step < 3 ? <Button variant="primary" type={step === 1 ? 'submit' : 'button'} form={step === 1 ? 'register-account-form' : undefined} onClick={step === 1 ? undefined : next} disabled={step === 1 ? !name.trim() || !email || !passwordValid : roleIds.length === 0 || roles.isPending || roles.isError}>{t('common.next')}</Button> : (
+            <Button variant="primary" icon="check" loading={create.isPending} disabled={canCustomize && (catalog.isPending || catalog.isError)} onClick={submit}>{t('register.submit')}</Button>
           )}
         </>
       )}
@@ -94,13 +100,14 @@ function RegisterDrawer({ onClose }: { onClose: () => void }) {
         </>
       ) : (
         <div className="flex min-h-0 grow flex-col gap-5">
-          <div className="flex items-center gap-2" aria-label={t('register.progress')}>
-            {[1, 2, 3].map((n) => <span key={n} className={cx('h-1.5 grow rounded-full', n <= step ? 'bg-accent' : 'bg-surface-2')} />)}
-            <span className="ml-2 text-sm text-ink-muted">{t('register.step', { step })}</span>
-          </div>
+          <Stepper label={t('register.progress')} current={step - 1} onJump={create.isPending ? undefined : (index) => setStep(index + 1)} steps={[
+            { id: 'account', label: t('form.account'), hint: '' },
+            { id: 'roles', label: t('register.roles'), hint: '' },
+            { id: 'review', label: t('form.review'), hint: '' },
+          ]} />
           {errorText ? <Banner tone="error">{errorText}</Banner> : null}
           {step === 1 ? (
-            <form className="flex flex-col gap-4" onSubmit={(e: FormEvent) => { e.preventDefault(); next(); }}>
+            <form id="register-account-form" className="flex flex-col gap-4" onSubmit={(e: FormEvent) => { e.preventDefault(); next(); }}>
               <p className="text-[15px] text-ink-muted">{t('register.accountDesc')}</p>
               <TextField label={t('register.name')} value={name} onChange={(e) => setName(e.target.value)} required autoFocus />
               <TextField label={t('register.email')} type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
@@ -141,6 +148,7 @@ function RegisterDrawer({ onClose }: { onClose: () => void }) {
               <legend className="mb-1 text-base font-semibold">{t('register.roles')}</legend>
               <p className="mb-3 text-sm text-ink-muted">{t('register.rolesHint')}</p>
               {roles.isPending ? <Skeleton lines={3} height={14} /> : null}
+              {roles.isError ? <LoadError onRetry={() => void roles.refetch()} /> : null}
               {assignableRoles.map((r) => {
                 const on = roleIds.includes(r.id);
                 return <label key={r.id} className={cx('flex cursor-pointer items-start gap-3 rounded-xl border p-3.5 transition-colors', on ? 'border-accent bg-accent-soft' : 'border-line bg-surface hover:border-line-strong')}>
@@ -152,8 +160,16 @@ function RegisterDrawer({ onClose }: { onClose: () => void }) {
           ) : null}
           {step === 3 ? (
             <div className="flex flex-col gap-4">
-              <div><h3 className="font-semibold">{t('register.custom')}</h3><p className="text-sm text-ink-muted">{canCustomize ? t('register.customHint') : t('register.customLocked')}</p></div>
-              {catalog.isPending ? <Skeleton lines={5} height={14} /> : <AccessEditor areas={areas} keys={customKeys} onChange={setCustomKeys} canChange={(key) => canCustomize && !!actor?.permissions.includes(key)} />}
+              <div className="rounded-xl border border-line bg-surface-2 p-4">
+                <h3 className="font-semibold">{name}</h3>
+                <p className="text-sm text-ink-muted">{email}</p>
+                <div className="mt-3 flex flex-wrap gap-2">{assignableRoles.filter((r) => roleIds.includes(r.id)).map((r) => <Tag key={r.id}>{roleLabel(t, r.name)}</Tag>)}</div>
+                <p className="mt-2 text-sm text-ink-muted">{t('form.permissions.count', { n: customKeys.length })}</p>
+              </div>
+              {catalog.isError ? <LoadError onRetry={() => void catalog.refetch()} /> : null}
+              <OptionalFields title={t('register.custom')} description={canCustomize ? t('register.customHint') : t('register.customLocked')} defaultOpen={overrides.length > 0}>
+                {catalog.isPending ? <Skeleton lines={5} height={14} /> : <AccessEditor areas={areas} keys={customKeys} onChange={setCustomKeys} canChange={(key) => !create.isPending && canCustomize && !!actor?.permissions.includes(key)} />}
+              </OptionalFields>
               {overrides.length > 0 ? <Banner tone="info">{t('register.customCount', { count: overrides.length })}</Banner> : null}
             </div>
           ) : null}
@@ -246,14 +262,7 @@ function UsersList() {
       ) : (
         <>
           <section className="min-w-0 overflow-hidden rounded-xl border border-line bg-surface shadow-card" aria-busy={users.isPending}>
-            {users.isPending
-              ? Array.from({ length: 6 }, (_, i) => (
-                  <div key={i} className="flex items-center gap-3 border-b border-line px-5 py-4 last:border-b-0">
-                    <Skeleton circle width={40} height={40} />
-                    <Skeleton lines={2} height={10} />
-                  </div>
-                ))
-              : null}
+            {users.isPending ? <LoadingBlock /> : null}
             {users.data && users.data.items.length === 0 ? (
               <StateBlock
                 kind="no-results"

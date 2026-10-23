@@ -56,10 +56,6 @@ export const shell = defineMessages({
   "shell.logout": { tr: "Çıkış yap", en: "Sign out" },
   "shell.myProfile": { tr: "Profilim", en: "My profile" },
   "shell.menu": { tr: "Menü", en: "Menu" },
-  "shell.sessionChecking": {
-    tr: "Oturum doğrulanıyor…",
-    en: "Checking your session…",
-  },
   "shell.demoBanner.title": {
     tr: "Örnek veriyle çalışan ekran",
     en: "Screen running on demo data",

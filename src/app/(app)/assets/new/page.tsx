@@ -1,8 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import { useState } from 'react';
-import { AssetForm, AssetPreview, TypeChooser, emptyDraft, validate, type AssetDraft } from '@/components/assets/asset-form';
+import { useRef, useState } from 'react';
+import { AssetForm, emptyDraft, validate, type AssetDraft } from '@/components/assets/asset-form';
 import { PageHeader, RequirePermission } from '@/components/shell/page-guard';
 import { Banner, Button, Icon, Tag, buttonClass } from '@/components/ui';
 import { useCreateAsset } from '@/features/assets/hooks';
@@ -10,21 +10,35 @@ import { useI18n } from '@/i18n';
 import { ApiError } from '@/lib/api';
 import { useDemo } from '@/lib/demo';
 import { PERMISSIONS as P } from '@/lib/permissions';
+import { ASSET_TYPE_SPECS } from '@/lib/asset-types';
+import type { AssetType } from '@/mocks/assets';
 import type { NewAssetBody } from '@/lib/types';
+
+const newDraft = (type: AssetType): AssetDraft => ({ ...emptyDraft(type), software: ASSET_TYPE_SPECS[type].software ? [{ id: 1, name: '', version: '' }] : [] });
 
 function NewAsset() {
   const { t } = useI18n();
   const demo = useDemo();
   const create = useCreateAsset();
   const [error, setError] = useState<string | null>(null);
-  const [draft, setDraft] = useState<AssetDraft | null>(null);
+  const [draft, setDraft] = useState<AssetDraft>(() => newDraft('server'));
   const [showErrors, setShowErrors] = useState(false);
   const [saved, setSaved] = useState<string | null>(null);
   const [justAdded, setJustAdded] = useState<string | null>(null);
 
-  const label = draft ? draft.name.trim() || draft.addr.trim() : '';
+  const drafts = useRef<Partial<Record<AssetType, AssetDraft>>>({});
+  const changeType = (type: AssetType) => {
+    drafts.current[draft.type] = draft;
+    const previous = drafts.current[type];
+    setDraft(previous ?? { ...newDraft(type), name: draft.name, owner: draft.owner, env: draft.env,
+      addr: ASSET_TYPE_SPECS[type].addr !== 'none' && ASSET_TYPE_SPECS[type].addr === ASSET_TYPE_SPECS[draft.type].addr ? draft.addr : '',
+    });
+    setShowErrors(false);
+    setError(null);
+  };
+  const label = draft.name.trim() || draft.addr.trim();
   const submit = (another: boolean) => {
-    if (!draft) return;
+    if (create.isPending) return;
     if (Object.keys(validate(draft)).length > 0) {
       setShowErrors(true);
       return;
@@ -39,7 +53,8 @@ function NewAsset() {
       onSuccess: () => {
         if (another) {
           setJustAdded(label);
-          setDraft(emptyDraft(draft.type));
+          setDraft(newDraft(draft.type));
+          drafts.current = {};
           setShowErrors(false);
           window.scrollTo({ top: 0, behavior: 'smooth' });
         } else {
@@ -61,7 +76,7 @@ function NewAsset() {
           <p className="mt-1 text-[15px] text-ink-muted">{t('asset.saved.matching')}</p>
         </div>
         <div className="flex flex-wrap justify-center gap-3">
-          <Button onClick={() => { setSaved(null); setDraft(null); setJustAdded(null); }}>{t('asset.saved.another')}</Button>
+          <Button onClick={() => { setSaved(null); setDraft(newDraft(draft.type)); drafts.current = {}; setShowErrors(false); setJustAdded(null); }}>{t('asset.saved.another')}</Button>
           <Link href="/assets" className={buttonClass('primary')}>{t('asset.saved.list')}</Link>
         </div>
       </div>
@@ -69,39 +84,28 @@ function NewAsset() {
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-[1100px] min-w-0 grow flex-col gap-5 p-4 md:p-8">
+    <div className="mx-auto flex w-full max-w-[880px] min-w-0 grow flex-col gap-5 p-4 md:p-8">
       <nav className="text-sm text-ink-muted [&_a]:text-ink-muted [&_a:hover]:text-ink" aria-label="breadcrumb">
         <Link href="/assets">{t('assets.title')}</Link> / {t('assets.add')}
       </nav>
-      <PageHeader title={t('assets.new.title')} subtitle={t('assets.new.subtitle')} actions={demo ? <Tag tone="accent">{t('common.demoData')}</Tag> : undefined} />
+      <PageHeader title={t('assets.new.title')} subtitle={t('asset.simple.subtitle')} actions={demo ? <Tag tone="accent">{t('common.demoData')}</Tag> : undefined} />
       {error ? <Banner tone="error" onDismiss={() => setError(null)}>{error}</Banner> : null}
       {justAdded ? <Banner tone="success" onDismiss={() => setJustAdded(null)}>{t('asset.saved.title', { name: justAdded })}</Banner> : null}
 
-      {draft === null ? (
-        <TypeChooser onPick={(type) => setDraft(emptyDraft(type))} />
-      ) : (
-        <div className="flex flex-col items-stretch gap-5 lg:flex-row lg:items-start">
-          <div className="flex min-w-0 grow flex-col gap-5">
-            <AssetForm
-              draft={draft}
-              onChange={setDraft}
-              showErrors={showErrors}
-              onChangeType={() => { setDraft(null); setShowErrors(false); }}
-            />
-            <div className="sticky bottom-0 -mx-4 flex flex-wrap items-center justify-end gap-3 border-t border-line bg-canvas/95 px-4 py-4 backdrop-blur md:mx-0 md:rounded-xl md:border md:bg-surface md:px-5">
-              <Link href="/assets" className={`${buttonClass('ghost')} mr-auto`}>{t('common.cancel')}</Link>
-              <Button loading={create.isPending} onClick={() => submit(true)}>{t('asset.saveAnother')}</Button>
-              <Button variant="primary" icon="check" loading={create.isPending} onClick={() => submit(false)}>{t('asset.save')}</Button>
-            </div>
-          </div>
-          <div className="flex w-full shrink-0 flex-col gap-4 lg:sticky lg:top-24 lg:w-[320px]">
-            <AssetPreview draft={draft} />
-            <p className="px-1 text-sm text-ink-muted">
-              {t('assets.new.bulkHint')} <Link href="/assets/import" className="font-medium">{t('assets.new.bulkLink')}</Link>
-            </p>
-          </div>
+      <nav className="flex gap-2 border-b border-line pb-3" aria-label={t('asset.simple.method')}>
+        <Link href="/assets/new" aria-current="page" className={buttonClass('secondary', 'sm')}>{t('asset.simple.single')}</Link>
+        <Link href="/assets/import" className={buttonClass('ghost', 'sm')}>{t('assets.new.bulkLink')}</Link>
+      </nav>
+      <form onSubmit={(e) => { e.preventDefault(); submit(false); }} className="flex flex-col gap-4">
+        <fieldset disabled={create.isPending} className="m-0 min-w-0 border-0 p-0">
+          <AssetForm draft={draft} onChange={setDraft} showErrors={showErrors} simplified onSelectType={changeType} />
+        </fieldset>
+        <div className="sticky bottom-0 z-10 flex flex-wrap items-center justify-end gap-2 rounded-xl border border-line bg-surface/95 px-4 py-3 backdrop-blur">
+          <Link href="/assets" className={`${buttonClass('ghost')} mr-auto`}>{t('common.cancel')}</Link>
+          <Button disabled={create.isPending} onClick={() => submit(true)}>{t('asset.saveAnother')}</Button>
+          <Button type="submit" variant="primary" icon="check" loading={create.isPending}>{t('asset.save')}</Button>
         </div>
-      )}
+      </form>
     </div>
   );
 }

@@ -1,7 +1,7 @@
 'use client';
 
-import type { ReactNode } from 'react';
-import { Icon, cx, type IconName } from '@/components/ui';
+import { useState, type ReactNode } from 'react';
+import { Icon, SearchInput, cx, type IconName } from '@/components/ui';
 import { useI18n } from '@/i18n';
 import {
   accessState, actionLabel, areaDescription, areaIcon, areaTitle, roleLabel, toggleAction,
@@ -45,9 +45,14 @@ export function AccessEditor({
 }) {
   const { t } = useI18n();
   const selected = new Set(keys);
+  const [query, setQuery] = useState('');
+  const term = query.trim().toLocaleLowerCase();
+  const visible = areas.filter((area) => !term || `${areaTitle(t, area.module)} ${area.module} ${area.perms.map((p) => `${p.key} ${p.description} ${actionLabel(t, p)}`).join(' ')}`.toLocaleLowerCase().includes(term));
   return (
     <div className="overflow-hidden rounded-xl border border-line">
-      {areas.map((area) => {
+      <div className="border-b border-line p-3"><SearchInput shortcut={null} value={query} onChange={(e) => setQuery(e.target.value)} placeholder={t('form.permissions.search')} aria-label={t('form.permissions.search')} className="w-full" /></div>
+      {visible.length === 0 ? <p className="p-4 text-sm text-ink-muted">{t('form.permissions.none')}</p> : null}
+      {visible.map((area) => {
         const changeable = area.perms.filter((p) => canChange(p.key));
         const allOn = changeable.length > 0 && changeable.every((p) => selected.has(p.key));
         return (

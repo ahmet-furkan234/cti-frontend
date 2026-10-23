@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { OptionalFields } from '@/components/forms/optional-fields';
 import { Drawer } from '@/components/admin/admin-parts';
 import { TagInput } from '@/components/intel/tag-input';
 import { Button, Icon, Select, StateBlock, Switch, TextField, Toggle, cx } from '@/components/ui';
@@ -95,22 +96,23 @@ export function WatchlistDrawer({ initial, saving, onSave, onDelete, onClose }: 
   const errors = { name: !d.name.trim(), target: !hasTarget(d) };
 
   const save = () => {
+    if (saving) return;
     if (errors.name || errors.target) return setShowErrors(true);
     onSave({ ...d, name: d.name.trim(), tag: d.tag.trim() });
   };
 
   return (
-    <Drawer wide title={t(initial.id ? 'intel.wl.editTitle' : 'intel.wl.new')} onClose={onClose}
+    <Drawer medium title={t(initial.id ? 'intel.wl.editTitle' : 'intel.wl.new')} onClose={onClose}
       footer={
         <>
           {onDelete ? <Button variant="danger" icon="trash" onClick={onDelete}>{t('intel.wl.delete')}</Button> : null}
           <span className="grow" />
           <Button variant="ghost" onClick={onClose}>{t('common.cancel')}</Button>
-          <Button variant="primary" icon="check" loading={saving} onClick={save}>{t('intel.wl.save')}</Button>
+          <Button variant="primary" icon="check" loading={saving} type="submit" form="watchlist-form">{t('intel.wl.save')}</Button>
         </>
       }
     >
-      <div className="flex flex-col gap-7">
+      <form id="watchlist-form" onSubmit={(e) => { e.preventDefault(); save(); }} className="flex flex-col gap-4">
         <TextField label={t('intel.wl.f.name')} hint={t('intel.wl.f.name.hint')} error={showErrors && errors.name ? t('intel.wl.err.name') : undefined} value={d.name} onChange={(e) => set('name', e.target.value)} autoFocus={!initial.id} />
 
         <section className="flex flex-col gap-3">
@@ -124,8 +126,7 @@ export function WatchlistDrawer({ initial, saving, onSave, onDelete, onClose }: 
           <TextField label={t('intel.wl.f.tag')} hint={t('intel.wl.f.tag.hint')} value={d.tag} onChange={(e) => set('tag', e.target.value)} />
         </section>
 
-        <section className="flex flex-col gap-4">
-          <h3 className="text-base font-semibold">{t('intel.wl.step.which')}</h3>
+        <OptionalFields title={t('intel.wl.step.which')} defaultOpen={initial.minCvss > 0 || initial.minEpss > 0 || initial.kevOnly}>
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <div className="flex flex-col gap-1.5">
               <span className="text-sm font-medium">{t('intel.wl.f.cvss')}</span>
@@ -137,7 +138,7 @@ export function WatchlistDrawer({ initial, saving, onSave, onDelete, onClose }: 
             </div>
           </div>
           <Switch checked={d.kevOnly} onChange={(v) => set('kevOnly', v)} label={t('intel.wl.f.kev')} />
-        </section>
+        </OptionalFields>
 
         <section className="flex flex-col gap-3">
           <h3 className="text-base font-semibold">{t('intel.wl.step.notify')}</h3>
@@ -148,7 +149,7 @@ export function WatchlistDrawer({ initial, saving, onSave, onDelete, onClose }: 
             options={[{ value: '', label: t('intel.wl.channel.none') }, ...channels.map((c) => ({ value: c.id, label: c.name }))]}
           />
         </section>
-      </div>
+      </form>
 
     </Drawer>
   );

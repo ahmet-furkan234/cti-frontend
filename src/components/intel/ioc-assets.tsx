@@ -11,7 +11,7 @@ export function IocAssets({ id }: { id: string }) {
   const { t } = useI18n();
   const q = useIocAssets(id, true);
   if (q.isError) return <LoadError onRetry={() => void q.refetch()} />;
-  if (q.isPending) return <LoadingRows rows={1} />;
+  if (q.isPending) return <LoadingRows />;
   const items = q.data.items;
   if (items.length === 0) return <StateBlock kind="empty" compact title={t('intel.ioc.noAssets')} />;
   return (

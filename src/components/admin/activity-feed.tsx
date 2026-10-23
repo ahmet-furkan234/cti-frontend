@@ -1,7 +1,7 @@
 'use client';
 
 import { Fragment, useMemo, useState } from 'react';
-import { Button, Icon, SearchInput, Select, Skeleton, StateBlock, cx } from '@/components/ui';
+import { Button, Icon, SearchInput, Select, LoadingBlock, StateBlock, cx } from '@/components/ui';
 import { useAuth } from '@/components/auth-provider';
 import { useAudit } from '@/features/admin/hooks';
 import { useI18n, type MessageKey, type TFunction } from '@/i18n';
@@ -151,7 +151,7 @@ export function ActivityFeed({ userId }: { userId: string }) {
 
       <section className="min-w-0 overflow-hidden rounded-xl border border-line bg-surface shadow-card" aria-busy={audit.isPending}>
         {audit.isPending ? (
-          <div className="p-5"><Skeleton lines={6} height={14} /></div>
+          <LoadingBlock />
         ) : items.length === 0 ? (
           all.length === 0 && !filtered ? (
             <StateBlock kind="empty" compact title={t('ud.activity.empty')} />
