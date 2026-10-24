@@ -188,11 +188,8 @@ function SyncView() {
             </div>
             {current.source === 'nvd' ? (
               <div className="flex flex-col gap-1.5">
-                <span className="text-sm font-medium">{t('sync.detail.tipTitle')}</span>
-                <span className="text-sm text-ink-muted">{t('sync.detail.tip')}</span>
               </div>
             ) : null}
-            <span className="text-sm text-ink-subtle">{t('sync.workerNote')}</span>
             <div className="grow" />
             {canRun ? (
               <Button variant="primary" loading={current.status === 'running' || !!current.runRequestedAt} disabled={run.isPending} onClick={() => trigger([current.source])}>
