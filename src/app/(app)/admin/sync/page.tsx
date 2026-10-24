@@ -186,10 +186,6 @@ function SyncView() {
                 {current.lastError ?? t('sync.detail.noError')}
               </div>
             </div>
-            {current.source === 'nvd' ? (
-              <div className="flex flex-col gap-1.5">
-              </div>
-            ) : null}
             <div className="grow" />
             {canRun ? (
               <Button variant="primary" loading={current.status === 'running' || !!current.runRequestedAt} disabled={run.isPending} onClick={() => trigger([current.source])}>
