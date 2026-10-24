@@ -122,6 +122,8 @@ export const alerts = defineMessages({
   'alerts.ch.kind.smtp.desc': { tr: 'Bir ya da birkaç e-posta adresine yollar', en: 'Sends to one or more email addresses' },
   'alerts.ch.kind.telegram': { tr: 'Telegram', en: 'Telegram' },
   'alerts.ch.kind.telegram.desc': { tr: 'Bir Telegram sohbetine veya grubuna yollar', en: 'Sends to a Telegram chat or group' },
+  'alerts.ch.kind.push': { tr: 'Mobil bildirim', en: 'Mobile push' },
+  'alerts.ch.kind.push.desc': { tr: 'Mobil uygulamaya giriş yapmış ve bildirimi açmış kullanıcıların telefonuna anlık bildirim gönderir', en: 'Sends an instant notification to the phones of users signed in to the mobile app with notifications on' },
   'alerts.ch.kind.webhook': { tr: 'Webhook', en: 'Webhook' },
   'alerts.ch.kind.webhook.desc': { tr: 'Herhangi bir sisteme (ör. SIEM) HTTP isteği yollar', en: 'Sends an HTTP request to any system (e.g. a SIEM)' },
   'alerts.chf.slack.url': { tr: 'Webhook adresi', en: 'Webhook URL' },

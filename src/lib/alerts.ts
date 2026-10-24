@@ -28,8 +28,9 @@ export const CHANNEL_KINDS: Record<ChannelKind, ChannelKindSpec> = {
   smtp: { abbr: 'EP', icon: 'report', fields: [{ id: 'host', mono: true, required: true }, { id: 'port', mono: true, required: true }, { id: 'from', required: true }, { id: 'to', required: true }] },
   telegram: { abbr: 'TG', icon: 'bell', fields: [{ id: 'token', secret: true, mono: true, required: true }, { id: 'chat', mono: true, required: true }] },
   webhook: { abbr: 'WH', icon: 'external', fields: [{ id: 'url', mono: true, required: true }, { id: 'secret', secret: true, mono: true }] },
+  push: { abbr: 'PS', icon: 'bell', fields: [] },
 };
-export const CHANNEL_KIND_ORDER: ChannelKind[] = ['slack', 'smtp', 'telegram', 'webhook'];
+export const CHANNEL_KIND_ORDER: ChannelKind[] = ['slack', 'smtp', 'telegram', 'webhook', 'push'];
 
 /** The short "where" line shown under a channel's name. */
 export function channelTarget(c: Pick<Channel, 'kind' | 'values'>): string {
@@ -39,6 +40,7 @@ export function channelTarget(c: Pick<Channel, 'kind' | 'values'>): string {
     case 'smtp': return `${v['host'] ?? ''}${v['port'] ? `:${v['port']}` : ''}`;
     case 'telegram': return v['chat'] ?? '';
     case 'webhook': return v['url'] ?? '';
+    case 'push': return '';
   }
 }
 

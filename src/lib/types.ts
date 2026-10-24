@@ -380,7 +380,7 @@ export interface CveAssetsResponse {
 }
 
 /* ---- alerts */
-export type ChannelKindValue = 'slack' | 'smtp' | 'telegram' | 'webhook';
+export type ChannelKindValue = 'slack' | 'smtp' | 'telegram' | 'webhook' | 'push';
 
 export interface ChannelDto {
   id: string;
